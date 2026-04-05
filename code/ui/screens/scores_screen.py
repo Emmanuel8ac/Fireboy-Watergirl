@@ -23,7 +23,7 @@ class ScoresScreen(QWidget):
 
         self.list_scores = QListWidget()
 
-        # Datos de prueba (estáticos)
+        # Datos de prueba
         scores = [
             ("Fireboy & Watergirl", 100),
             ("Jugador1 & Jugador2", 85),
