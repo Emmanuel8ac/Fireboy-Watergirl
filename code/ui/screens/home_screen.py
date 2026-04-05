@@ -28,8 +28,9 @@ class HomeScreen(QWidget):
         self.overlay_layout = QVBoxLayout()
         self.overlay.setLayout(self.overlay_layout)
 
-        self.overlay_layout.setAlignment(Qt.AlignCenter)
-        self.overlay_layout.setSpacing(20)
+        # Fondo
+        self.background_label = QLabel(self)
+        pixmap = QPixmap("resources/images/portada.png")
 
         # TÍTULO
 
