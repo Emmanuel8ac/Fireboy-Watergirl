@@ -1,5 +1,7 @@
 import os
-from config import MUSIC_VOLUME, EFFECT_VOLUME
+
+MUSIC_VOLUME = 0.5
+EFFECT_VOLUME = 0.7
 
 _SOUNDS_DIR = os.path.join(
     os.path.dirname(__file__), "..", "resources", "sounds"
