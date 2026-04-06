@@ -1,69 +1,90 @@
 from PySide6.QtWidgets import (
     QWidget, QLabel, QPushButton, QVBoxLayout,
-    QListWidget, QListWidgetItem
+    QHBoxLayout, QListWidget, QListWidgetItem
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 
+from logic.score_manager import ScoreManager
+
 
 class ScoresScreen(QWidget):
-    def __init__(self):
+
+    def __init__(self, score_mgr: ScoreManager):
         super().__init__()
-        self.init_ui()
+        self._score_mgr = score_mgr
+        self._build_ui()
 
-    def init_ui(self):
-        self.main_layout = QVBoxLayout()
-        self.setLayout(self.main_layout)
+    def _build_ui(self):
+        layout = QVBoxLayout(self)
+        layout.setSpacing(15)
 
-        self.main_layout.setSpacing(20)
-
-        self.lbl_title = QLabel("PUNTUACIONES")
+        self.lbl_title = QLabel("🏆  PUNTUACIONES")
         self.lbl_title.setAlignment(Qt.AlignCenter)
         self.lbl_title.setFont(QFont("Arial", 18, QFont.Bold))
 
+        header = QHBoxLayout()
+        for text in ("#", "Jugadores", "Puntos", "Duración"):
+            lbl = QLabel(text)
+            lbl.setFont(QFont("Arial", 11, QFont.Bold))
+            header.addWidget(lbl)
+
         self.list_scores = QListWidget()
+        self.list_scores.setAlternatingRowColors(True)
+        self.list_scores.setFont(QFont("Courier New", 12))
 
-        # Datos de prueba
-        scores = [
-            ("Fireboy & Watergirl", 100),
-            ("Jugador1 & Jugador2", 85),
-            ("Equipo X", 70),
-            ("Equipo Y", 60)
-        ]
+        btn_row = QHBoxLayout()
+        self.btn_back  = QPushButton("REGRESAR")
+        self.btn_clear = QPushButton("LIMPIAR HISTORIAL")
+        self.btn_back.setFixedWidth(160)
+        self.btn_clear.setFixedWidth(180)
+        self.btn_clear.clicked.connect(self._clear)
+        btn_row.addWidget(self.btn_back)
+        btn_row.addWidget(self.btn_clear)
 
-        for name, score in scores:
-            item = QListWidgetItem(f"{name} - {score} pts")
-            self.list_scores.addItem(item)
+        layout.addWidget(self.lbl_title)
+        layout.addLayout(header)
+        layout.addWidget(self.list_scores)
+        layout.addLayout(btn_row)
 
-        self.btn_back = QPushButton("REGRESAR")
-        self.btn_back.setFixedWidth(150)
+        self.refresh()
+        self._apply_styles()
 
-        self.main_layout.addWidget(self.lbl_title)
-        self.main_layout.addWidget(self.list_scores)
-        self.main_layout.addWidget(self.btn_back, alignment=Qt.AlignCenter)
+    def refresh(self):
+        self.list_scores.clear()
+        scores = self._score_mgr.get_scores()
 
-        self.apply_styles()
+        if not scores:
+            self.list_scores.addItem("  Sin partidas registradas aún")
+            return
 
-    def apply_styles(self):
+        for i, entry in enumerate(scores, start=1):
+            text = (
+                f"  {i:>2}.  "
+                f"{entry['players']:<28}"
+                f"{entry['score']:>5} pts   "
+                f"{entry['duration']} s"
+            )
+            self.list_scores.addItem(QListWidgetItem(text))
+
+    def _clear(self):
+        self._score_mgr.clear()
+        self.refresh()
+
+    def _apply_styles(self):
         self.setStyleSheet("""
             QListWidget {
                 background-color: #f2e3c6;
                 border: 2px solid black;
                 padding: 5px;
             }
-
-            QLabel {
-                font-size: 14px;
-            }
-
+            QListWidget::item:alternate { background-color: #e8d5b0; }
+            QLabel { font-size: 14px; }
             QPushButton {
                 background-color: #d9b38c;
                 border: 2px solid black;
                 padding: 8px;
                 border-radius: 6px;
             }
-
-            QPushButton:hover {
-                background-color: #c69c6d;
-            }
+            QPushButton:hover { background-color: #c69c6d; }
         """)
