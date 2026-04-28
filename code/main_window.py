@@ -16,7 +16,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("Juego")
+        self.setWindowTitle("Fireboy & Watergirl")
         self.resize(800, 600)
 
         self.network = NetworkManager()
