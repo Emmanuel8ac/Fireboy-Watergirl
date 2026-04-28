@@ -80,11 +80,12 @@ class HomeScreen(QWidget):
 
         pixmap = self.frames[self.current_frame]
 
-        # Escalar al tamaño del área
-        pixmap = pixmap.scaled(
-            self.animation_label.size(),
-            Qt.KeepAspectRatio,
-            Qt.SmoothTransformation
+    def _update_audio_button(self):
+        icon = "1.png" if self._audio.is_enabled() else "1.png"
+
+        path = os.path.join(
+            os.path.dirname(__file__),
+            "..", "..", "resources", "ui", "buttons", "btn_muter", icon
         )
 
         self.animation_label.setPixmap(pixmap)
