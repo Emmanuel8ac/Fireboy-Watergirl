@@ -6,7 +6,7 @@ _SOUNDS_DIR = os.path.join(
 )
 
 TRACKS = {
-    "menu": os.path.join(_SOUNDS_DIR, "menu_music.wav"),
+    "menu": os.path.join(_SOUNDS_DIR, "menu_sound.mp3"),
     "game": os.path.join(_SOUNDS_DIR, "game_music.wav"),
 }
 

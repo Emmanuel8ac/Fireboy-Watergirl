@@ -1,84 +1,107 @@
 import os
-from PySide6.QtWidgets import QWidget, QLabel, QPushButton, QVBoxLayout
-from PySide6.QtGui import QPixmap
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtWidgets import QWidget, QPushButton, QVBoxLayout, QLabel
+from PySide6.QtGui import QPixmap, QIcon
+from PySide6.QtCore import Qt
 
 
 class HomeScreen(QWidget):
-    def __init__(self):
+
+    def __init__(self, audio):
         super().__init__()
+        self._audio = audio
+        self._build_ui()
 
-        self.init_ui()
-        self.load_animation()
-        self.start_animation()
+    def _build_ui(self):
+        main_layout = QVBoxLayout(self)
 
-    # ================= UI =================
-    def init_ui(self):
-        self.setStyleSheet("background-color: black;")
+        # ===== FONDO =====
+        self.background_label = QLabel(self)
+        bg_path = os.path.join(
+            os.path.dirname(__file__),
+            "..", "..", "resources", "ui", "menu", "background_menu.png"
+        )
+        pixmap = QPixmap(bg_path)
+        self.background_label.setPixmap(pixmap)
+        self.background_label.setScaledContents(True)
 
         # ===== TÍTULO =====
         self.lbl_title = QLabel()
+        title_path = os.path.join(
+            os.path.dirname(__file__),
+            "..", "..", "resources", "ui", "menu", "title.png"
+        )
+        self.lbl_title.setPixmap(QPixmap(title_path))
         self.lbl_title.setAlignment(Qt.AlignCenter)
-        self.lbl_title.setPixmap(QPixmap("resources/images/title.png"))
 
-        # ===== ÁREA CENTRAL (ANIMACIÓN) =====
-        self.animation_label = QLabel()
-        self.animation_label.setFixedSize(400, 300)
-        self.animation_label.setAlignment(Qt.AlignCenter)
-        self.animation_label.setStyleSheet("""
-            background-color: transparent;
-        """)
-
-        # ===== BOTÓN PLAY (IMAGEN) =====
+        # ===== BOTONES IMÁGENES =====
         self.btn_play = QPushButton()
-        self.btn_play.setCursor(Qt.PointingHandCursor)
+        self.btn_scores = QPushButton()
+        self.btn_credits = QPushButton()
+        self.btn_exit = QPushButton()
 
-        self.btn_play.setStyleSheet("""
-            QPushButton {
-                border: none;
-            }
-        """)
 
-        self.btn_play.setIcon(QPixmap("resources/images/play.png"))
-        self.btn_play.setIconSize(self.btn_play.icon().availableSizes()[0])
+        self._set_button_icon(self.btn_play, "btn_play", "1_up.png", scale=1.4)
+        self._set_button_icon(self.btn_scores, "btn_highscores", "1_up.png", scale=0.9)
+        self._set_button_icon(self.btn_credits, "btn_credits", "1_up.png", scale=0.9)
+        self._set_button_icon(self.btn_exit, "", "exit.png", scale=0.9)
 
-        # ===== LAYOUT =====
-        layout = QVBoxLayout()
+        # Layout botones
+        button_layout = QVBoxLayout()
+        button_layout.setAlignment(Qt.AlignCenter)
+        button_layout.setSpacing(8)  # menos espacio
 
-        layout.addStretch()
-        layout.addWidget(self.lbl_title)
-        layout.addSpacing(20)
-        layout.addWidget(self.animation_label, alignment=Qt.AlignCenter)
-        layout.addSpacing(20)
-        layout.addWidget(self.btn_play, alignment=Qt.AlignCenter)
-        layout.addStretch()
+        button_layout.addWidget(self.btn_play, alignment=Qt.AlignCenter)
+        button_layout.addSpacing(10)
+        button_layout.addWidget(self.btn_scores, alignment=Qt.AlignCenter)
+        button_layout.addWidget(self.btn_credits, alignment=Qt.AlignCenter)
+        button_layout.addSpacing(5)
+        button_layout.addWidget(self.btn_exit, alignment=Qt.AlignCenter)
 
-        self.setLayout(layout)
+        # ===== AUDIO =====
+        self.btn_audio = QPushButton(self)
+        self.btn_audio.setFixedSize(50, 50)
+        self.btn_audio.setStyleSheet("border: none;")
+        self.btn_audio.clicked.connect(self._toggle_audio)
 
-    # ================= ANIMACIÓN =================
-    def load_animation(self):
-        # Carpeta donde están los PNG (ej: frame_0.png, frame_1.png, ...)
-        self.frames = []
+        self._update_audio_button()
 
-        folder = "resources/particles"  # AJUSTA ESTA RUTA
+        # ===== MAIN LAYOUT =====
+        main_layout.addSpacing(40)  # espacio arriba
+        main_layout.addWidget(self.lbl_title)
+        main_layout.addSpacing(20)  # separación título-play
+        main_layout.addLayout(button_layout)
+        main_layout.addStretch()
 
-        for file in sorted(os.listdir(folder)):
-            if file.endswith(".png"):
-                path = os.path.join(folder, file)
-                self.frames.append(QPixmap(path))
+    # ===== BOTONES CON IMAGEN =====
+    def _set_button_icon(self, button, dirname, filename, scale=1.0):
+        path = os.path.join(
+            os.path.dirname(__file__),
+            "..", "..", "resources", "ui", "buttons", dirname, filename
+        )
 
-        self.current_frame = 0
+        pixmap = QPixmap(path)
 
-    def start_animation(self):
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.update_frame)
-        self.timer.start(50)  # velocidad (más bajo = más rápido)
+        #Escalar imagen
+        size = pixmap.size() * scale
+        button.setIcon(QIcon(pixmap))
+        button.setIconSize(size)
 
-    def update_frame(self):
-        if not self.frames:
-            return
+        #área clickeable más pequeña
+        button.setFixedSize(size)
 
-        pixmap = self.frames[self.current_frame]
+        button.setStyleSheet("border: none;")
+        button.setCursor(Qt.PointingHandCursor)
+
+    # ===== AUDIO =====
+    def _toggle_audio(self):
+        estado = self._audio.toggle_audio()
+
+        if estado:
+            self._audio.play_music("menu")
+        else:
+            self._audio.stop_music()
+
+        self._update_audio_button()
 
     def _update_audio_button(self):
         icon = "1.png" if self._audio.is_enabled() else "1.png"
@@ -88,6 +111,16 @@ class HomeScreen(QWidget):
             "..", "..", "resources", "ui", "buttons", "btn_muter", icon
         )
 
-        self.animation_label.setPixmap(pixmap)
+        self.btn_audio.setIcon(QIcon(path))
+        self.btn_audio.setIconSize(QPixmap(path).size())
 
-        self.current_frame = (self.current_frame + 1) % len(self.frames)
+    # ===== EVENTOS =====
+    def showEvent(self, event):
+        if self._audio.is_enabled():
+            self._audio.play_music("menu")
+
+    def resizeEvent(self, event):
+        self.background_label.setGeometry(0, 0, self.width(), self.height())
+
+        # posicionar botón audio abajo derecha
+        self.btn_audio.move(self.width() - 60, self.height() - 60)
