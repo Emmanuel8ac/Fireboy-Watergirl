@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="2eb08248-c9c0-4f5f-a3bd-d4f4fafd087f" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/code/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/code/config.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/logic/audio_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/code/logic/audio_manager.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/logic/game_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/code/logic/game_manager.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/logic/network_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/code/logic/network_manager.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/logic/score_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/code/logic/score_manager.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/code/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/main_window.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/ui/screens/connection_screen.py" beforeDir="false" afterPath="$PROJECT_DIR$/code/ui/screens/connection_screen.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/ui/screens/game_screen.py" beforeDir="false" afterPath="$PROJECT_DIR$/code/ui/screens/game_screen.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/ui/screens/home_screen.py" beforeDir="false" afterPath="$PROJECT_DIR$/code/ui/screens/home_screen.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/ui/screens/player_setup_screen.py" beforeDir="false" afterPath="$PROJECT_DIR$/code/ui/screens/player_setup_screen.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/ui/screens/scores_screen.py" beforeDir="false" afterPath="$PROJECT_DIR$/code/ui/screens/scores_screen.py" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="McpProjectServerCommands">
+    <commands />
+    <urls />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 0
+}</component>
+  <component name="ProjectId" id="3BsGCSaQPexsE5170dQWIgtR30Y" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "Python.Tarea_Chat.executor": "Run",
+    "Python.home_screen.executor": "Run",
+    "Python.intro_screen.executor": "Run",
+    "Python.main (1).executor": "Run",
+    "Python.main.executor": "Run",
+    "Python.main_window.executor": "Run",
+    "Python.player_setup_screen.executor": "Run",
+    "RunOnceActivity.MCP Project settings loaded": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "ai.playground.ignore.import.keys.banner.in.settings": "true",
+    "git-widget-placeholder": "integrar-codigo-alterno",
+    "ignore.virus.scanning.warn.message": "true",
+    "last_opened_file_path": "C:/Users/Emman/fireboy_and_watergirl",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\Emman\fireboy&amp;watergirl\code\ui\screens" />
+    </key>
+  </component>
+  <component name="RunManager">
+    <configuration name="main (1)" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="fireboy_and_watergirl" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/code" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="RUN_TOOL" value="" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/code/main.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.main (1)" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-d6986cc7102b-9b0f141eb926-JavaScript-PY-253.30387.127" />
+        <option value="bundled-python-sdk-3944b0c99280-6d6dccd035ac-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-253.30387.127" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="2eb08248-c9c0-4f5f-a3bd-d4f4fafd087f" name="Changes" comment="" />
+      <created>1775270239118</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1775270239118</updated>
+      <workItem from="1775270240154" duration="2933000" />
+      <workItem from="1775341565660" duration="4163000" />
+      <workItem from="1775347538574" duration="602000" />
+      <workItem from="1775350130178" duration="490000" />
+      <workItem from="1775350639631" duration="7018000" />
+      <workItem from="1775487000482" duration="462000" />
+      <workItem from="1775487490213" duration="98000" />
+      <workItem from="1775487605238" duration="2824000" />
+      <workItem from="1776217349544" duration="330000" />
+      <workItem from="1776217908061" duration="2214000" />
+      <workItem from="1776799022057" duration="3905000" />
+      <workItem from="1776873962219" duration="16000" />
+      <workItem from="1777251316398" duration="2140000" />
+      <workItem from="1777305807303" duration="12000" />
+      <workItem from="1777329558943" duration="7739000" />
+      <workItem from="1777392686323" duration="49000" />
+      <workItem from="1777427025937" duration="3942000" />
+      <workItem from="1777839321195" duration="2954000" />
+      <workItem from="1777944851402" duration="153000" />
+      <workItem from="1777945078967" duration="1735000" />
+      <workItem from="1777986876429" duration="214000" />
+      <workItem from="1777993566850" duration="1918000" />
+      <workItem from="1778508669887" duration="788000" />
+      <workItem from="1778550768671" duration="837000" />
+      <workItem from="1778552667232" duration="595000" />
+      <workItem from="1778688756532" duration="2489000" />
+      <workItem from="1779650915441" duration="714000" />
+      <workItem from="1779674716040" duration="2323000" />
+      <workItem from="1779683617940" duration="1465000" />
+      <workItem from="1779685176791" duration="3087000" />
+    </task>
+    <task id="LOCAL-00001" summary="cambié el gif de fondo por una imagen">
+      <option name="closed" value="true" />
+      <created>1775356608692</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1775356608692</updated>
+    </task>
+    <task id="LOCAL-00002" summary="cambio de titulo">
+      <option name="closed" value="true" />
+      <created>1775487740361</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1775487740361</updated>
+    </task>
+    <task id="LOCAL-00003" summary="png audio mute por agregar">
+      <option name="closed" value="true" />
+      <created>1777339249305</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1777339249305</updated>
+    </task>
+    <task id="LOCAL-00004" summary="agregando muscia de intro_screen.py">
+      <option name="closed" value="true" />
+      <created>1777946442771</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1777946442773</updated>
+    </task>
+    <task id="LOCAL-00005" summary="borrando boton exit">
+      <option name="closed" value="true" />
+      <created>1779675016793</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1779675016793</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="cambié el gif de fondo por una imagen" />
+    <MESSAGE value="cambio de titulo" />
+    <MESSAGE value="png audio mute por agregar" />
+    <MESSAGE value="agregando muscia de intro_screen.py" />
+    <MESSAGE value="borrando boton exit" />
+    <option name="LAST_COMMIT_MESSAGE" value="borrando boton exit" />
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/fireboy_watergirl$main.coverage" NAME="main Coverage Results" MODIFIED="1775496794467" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/code" />
+    <SUITE FILE_PATH="coverage/fireboy_and_watergirl$Tarea_Chat.coverage" NAME="main Coverage Results" MODIFIED="1779675197240" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/../Downloads" />
+    <SUITE FILE_PATH="coverage/fireboy_watergirl$main_window.coverage" NAME="main_window Coverage Results" MODIFIED="1775352123607" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/code" />
+    <SUITE FILE_PATH="coverage/fireboy_watergirl$player_setup_screen.coverage" NAME="player_setup_screen Coverage Results" MODIFIED="1775271443152" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/code/ui" />
+    <SUITE FILE_PATH="coverage/fireboy_and_watergirl$home_screen.coverage" NAME="home_screen Coverage Results" MODIFIED="1777339797053" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/code/ui/screens" />
+    <SUITE FILE_PATH="coverage/fireboy_and_watergirl$main__1_.coverage" NAME="main (1) Coverage Results" MODIFIED="1779688390313" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/code" />
+    <SUITE FILE_PATH="coverage/fireboy_and_watergirl$main.coverage" NAME="main Coverage Results" MODIFIED="1779685192385" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/../Downloads" />
+    <SUITE FILE_PATH="coverage/fireboy_watergirl$home_screen.coverage" NAME="home_screen Coverage Results" MODIFIED="1775347479021" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/code/ui/screens" />
+    <SUITE FILE_PATH="coverage/fireboy_and_watergirl$intro_screen.coverage" NAME="intro_screen Coverage Results" MODIFIED="1777946485021" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/code/ui/screens" />
+  </component>
+</project>
