@@ -45,8 +45,6 @@ class MainWindow(QMainWindow):
     def _connect_signals(self):
         self.home.btn_play.clicked.connect(self._go_to_setup)
         self.home.btn_scores.clicked.connect(self._show_scores)
-        self.home.btn_exit.clicked.connect(self.close)
-
         self.level_select.level_selected.connect(self._on_level_selected)
         self.level_select.btn_back.clicked.connect(self._go_home)
 
@@ -60,7 +58,6 @@ class MainWindow(QMainWindow):
         self.network.status_changed.connect(self.connection.show_info)
         self.network.client_connected.connect(self._start_game)
 
-        self.game.btn_exit.clicked.connect(self._on_game_exit)
         self.game_mgr.game_over.connect(self._on_game_over)
 
         self.scores.btn_back.clicked.connect(self._go_home)
