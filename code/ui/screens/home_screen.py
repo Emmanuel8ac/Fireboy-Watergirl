@@ -44,6 +44,7 @@ class HomeScreen(QWidget):
         button_layout.setSpacing(0)
         button_layout.setAlignment(Qt.AlignCenter)
         button_layout.addWidget(self.btn_play, alignment=Qt.AlignCenter)
+        button_layout.addSpacing(60)
         button_layout.addWidget(self.btn_scores, alignment=Qt.AlignCenter)
 
         layout.addStretch(1)
