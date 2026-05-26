@@ -48,7 +48,9 @@ class MainWindow(QMainWindow):
             self.audio.play_music("menu")
 
     def connect_signals(self):
-        self.home.btn_play.clicked.connect(self._go_to_player_setup)
+        self.home.btn_play.clicked.connect(
+            lambda: self.stack.setCurrentWidget(self.connection)
+        )
         self.home.btn_scores.clicked.connect(
             lambda: self.stack.setCurrentWidget(self.scores)
         )
@@ -59,7 +61,7 @@ class MainWindow(QMainWindow):
         )
 
         self.connection.btn_back.clicked.connect(
-            lambda: self.stack.setCurrentWidget(self.player_setup)
+            lambda: self.stack.setCurrentWidget(self.home)
         )
         self.connection.btn_create.clicked.connect(self._start_game)
         self.connection.btn_join.clicked.connect(self._start_game)
