@@ -1,5 +1,3 @@
-"""Modelos principales del juego."""
-
 from PySide6.QtCore import QRectF
 from PySide6.QtGui import QColor
 
@@ -63,13 +61,7 @@ class Hazard:
 
 
 class Switch:
-    def __init__(
-        self,
-        rect: QRectF,
-        target: str,
-        color: str,
-        active: bool = False,
-    ):
+    def __init__(self, rect: QRectF, target: str, color: str, active: bool = False):
         self.rect = rect
         self.target = target
         self.color = color
@@ -77,13 +69,7 @@ class Switch:
 
 
 class Lever:
-    def __init__(
-        self,
-        rect: QRectF,
-        target: str,
-        color: str,
-        active: bool = False,
-    ):
+    def __init__(self, rect: QRectF, target: str, color: str, active: bool = False):
         self.rect = rect
         self.target = target
         self.color = color
@@ -118,12 +104,7 @@ class Portal:
 
 
 class Box:
-    def __init__(
-        self,
-        rect: QRectF,
-        vx: float = 0.0,
-        vy: float = 0.0,
-    ):
+    def __init__(self, rect: QRectF, vx: float = 0.0, vy: float = 0.0):
         self.rect = rect
         self.vx = vx
         self.vy = vy
@@ -173,7 +154,6 @@ class Level:
         self.water_spawn = water_spawn
         self.fire_door = fire_door
         self.water_door = water_door
-
         self.platforms = platforms if platforms is not None else []
         self.hazards = hazards if hazards is not None else []
         self.diamonds = diamonds if diamonds is not None else []
