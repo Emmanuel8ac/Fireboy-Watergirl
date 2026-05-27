@@ -6,11 +6,14 @@ class GameManager(QObject):
     tick = Signal(int)
     score_changed = Signal(int, int)
     game_over = Signal(int, int)
+    level_completed = Signal(int, int)
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self._player1 = "Fireboy"
         self._player2 = "Watergirl"
+        self._name1 = "Jugador 1"
+        self._name2 = "Jugador 2"
         self._score1 = 0
         self._score2 = 0
         self._time_left = GAME_DURATION_SECONDS
@@ -20,9 +23,11 @@ class GameManager(QObject):
         self._timer.setInterval(1000)
         self._timer.timeout.connect(self._on_tick)
 
-    def setup(self, player1: str, player2: str):
+    def setup(self, player1: str, player2: str, name1: str = "Jugador 1", name2: str = "Jugador 2"):
         self._player1 = player1 or "Fireboy"
         self._player2 = player2 or "Watergirl"
+        self._name1 = name1 or "Jugador 1"
+        self._name2 = name2 or "Jugador 2"
 
     def start(self):
         self._score1 = 0
@@ -39,6 +44,13 @@ class GameManager(QObject):
         self._running = False
         self._timer.stop()
         self.game_over.emit(self._score1, self._score2)
+
+    def complete_level(self):
+        if not self._running:
+            return
+        self._running = False
+        self._timer.stop()
+        self.level_completed.emit(self._score1, self._score2)
 
     def abort(self):
         self._running = False
@@ -78,6 +90,14 @@ class GameManager(QObject):
         return self._player2
 
     @property
+    def name1(self) -> str:
+        return self._name1
+
+    @property
+    def name2(self) -> str:
+        return self._name2
+
+    @property
     def time_left(self) -> int:
         return self._time_left
 
@@ -91,9 +111,9 @@ class GameManager(QObject):
 
     def winner(self) -> str:
         if self._score1 > self._score2:
-            return self._player1
+            return self._name1
         if self._score2 > self._score1:
-            return self._player2
+            return self._name2
         return "Empate"
 
     def _on_tick(self):
