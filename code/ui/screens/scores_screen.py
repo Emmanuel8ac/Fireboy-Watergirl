@@ -1,15 +1,11 @@
-from PySide6.QtWidgets import (
-    QWidget, QLabel, QPushButton, QVBoxLayout,
-    QHBoxLayout, QListWidget, QListWidgetItem
-)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QListWidget, QListWidgetItem, QPushButton, QVBoxLayout, QWidget
 
 from logic.score_manager import ScoreManager
 
 
 class ScoresScreen(QWidget):
-
     def __init__(self, score_mgr: ScoreManager):
         super().__init__()
         self._score_mgr = score_mgr
@@ -18,53 +14,42 @@ class ScoresScreen(QWidget):
     def _build_ui(self):
         layout = QVBoxLayout(self)
         layout.setSpacing(15)
-
-        self.lbl_title = QLabel("🏆  PUNTUACIONES")
+        self.lbl_title = QLabel("HISTORIAL DE PUNTAJES")
         self.lbl_title.setAlignment(Qt.AlignCenter)
-        self.lbl_title.setFont(QFont("Arial", 18, QFont.Bold))
-
-        header = QHBoxLayout()
-        for text in ("#", "Jugadores", "Puntos", "Duración"):
-            lbl = QLabel(text)
-            lbl.setFont(QFont("Arial", 11, QFont.Bold))
-            header.addWidget(lbl)
+        self.lbl_title.setFont(QFont("Arial", 22, QFont.Bold))
 
         self.list_scores = QListWidget()
         self.list_scores.setAlternatingRowColors(True)
-        self.list_scores.setFont(QFont("Courier New", 12))
+        self.list_scores.setFont(QFont("Courier New", 11))
 
-        btn_row = QHBoxLayout()
-        self.btn_back  = QPushButton("REGRESAR")
+        row = QHBoxLayout()
+        self.btn_back = QPushButton("REGRESAR")
         self.btn_clear = QPushButton("LIMPIAR HISTORIAL")
-        self.btn_back.setFixedWidth(160)
-        self.btn_clear.setFixedWidth(180)
+        self.btn_back.setFixedWidth(170)
+        self.btn_clear.setFixedWidth(210)
         self.btn_clear.clicked.connect(self._clear)
-        btn_row.addWidget(self.btn_back)
-        btn_row.addWidget(self.btn_clear)
+        row.addStretch()
+        row.addWidget(self.btn_back)
+        row.addWidget(self.btn_clear)
+        row.addStretch()
 
         layout.addWidget(self.lbl_title)
-        layout.addLayout(header)
+        layout.addWidget(QLabel("    #   Jugador              Personaje      Puntos   Tiempo"))
         layout.addWidget(self.list_scores)
-        layout.addLayout(btn_row)
-
+        layout.addLayout(row)
         self.refresh()
         self._apply_styles()
 
     def refresh(self):
         self.list_scores.clear()
         scores = self._score_mgr.get_scores()
-
         if not scores:
-            self.list_scores.addItem("  Sin partidas registradas aún")
+            self.list_scores.addItem("  Todavía no hay partidas guardadas")
             return
-
-        for i, entry in enumerate(scores, start=1):
-            text = (
-                f"  {i:>2}.  "
-                f"{entry['players']:<28}"
-                f"{entry['score']:>5} pts   "
-                f"{entry['duration']} s"
-            )
+        for index, entry in enumerate(scores, start=1):
+            name = entry.get("player_name") or entry.get("players", "-")
+            character = entry.get("character", "Partida anterior")
+            text = f"  {index:>2}. {name:<20} {character:<14} {entry.get('score', 0):>5} pts   {entry.get('duration', 0):>3}s"
             self.list_scores.addItem(QListWidgetItem(text))
 
     def _clear(self):
@@ -73,18 +58,9 @@ class ScoresScreen(QWidget):
 
     def _apply_styles(self):
         self.setStyleSheet("""
-            QListWidget {
-                background-color: #f2e3c6;
-                border: 2px solid black;
-                padding: 5px;
-            }
-            QListWidget::item:alternate { background-color: #e8d5b0; }
-            QLabel { font-size: 14px; }
-            QPushButton {
-                background-color: #d9b38c;
-                border: 2px solid black;
-                padding: 8px;
-                border-radius: 6px;
-            }
-            QPushButton:hover { background-color: #c69c6d; }
+            QWidget { background-color: #2b1b12; color: #f6dfb4; }
+            QListWidget { background-color: #f2e3c6; color: #21160e; border: 2px solid #4a2c19; padding: 6px; }
+            QListWidget::item:alternate { background-color: #e6d0a5; }
+            QPushButton { background-color: #d9b38c; border: 2px solid #2f1b0e; color: #21160e; padding: 8px; border-radius: 7px; font-weight: bold; }
+            QPushButton:hover { background-color: #efc58b; }
         """)
