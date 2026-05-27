@@ -2,15 +2,16 @@ from pathlib import Path
 import math
 import random
 
-from PySide6.QtCore import Qt, QTimer, QRectF, QPointF
-from PySide6.QtGui import QColor, QFont, QImage, QPainter, QPen, QPixmap, QPolygonF, QTransform
-from PySide6.QtWidgets import QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QGridLayout, QFrame, QMessageBox
+from PySide6.QtCore import Qt, QTimer, QRectF, QPointF, QSize
+from PySide6.QtGui import QColor, QFont, QIcon, QImage, QPainter, QPen, QPixmap, QPolygonF, QTransform
+from PySide6.QtWidgets import QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QFrame, QMessageBox
 
-from config import GAME_DURATION_SECONDS, CHARACTERS_DIR, TEXTURES_DIR, ELEMENTS_DIR, ORIGINAL_DIR
+from config import GAME_DURATION_SECONDS, CHARACTERS_DIR, TEXTURES_DIR, ELEMENTS_DIR, UI_DIR
 from logic.game_manager import GameManager
 from logic.audio_manager import AudioManager
 from logic.network_manager import NetworkManager
-from models.player import Player, Diamond, Hazard, Switch, Lever, MovingSolid, Portal, Box, Particle, Level
+from models.player import Player, Diamond, Hazard, Switch, Lever, MovingSolid, Portal, Box, Particle
+from logic.level_builder import create_level
 
 
 def R(x, y, w, h):
@@ -18,18 +19,15 @@ def R(x, y, w, h):
 
 
 class GameCanvas(QWidget):
-    """Fast canvas with code-based physics and original-game visual assets."""
 
-    WORLD_W = 1024
-    WORLD_H = 768
-    SOURCE_W = 1200
-    SOURCE_H = 720
-    GRAVITY = 0.70
-    MOVE = 5.0
-    JUMP = -14.8
+    WORLD_W = 1200
+    WORLD_H = 720
+    GRAVITY = 0.66
+    MOVE = 5.6
+    JUMP = -15.4
     MAX_FALL = 17.0
-    PLAYER_W = 43.0
-    PLAYER_H = 59.0
+    PLAYER_W = 46.0
+    PLAYER_H = 64.0
 
     def __init__(self, game_mgr: GameManager, audio: AudioManager, network: NetworkManager = None, parent=None):
         super().__init__(parent)
@@ -70,7 +68,6 @@ class GameCanvas(QWidget):
         return {name for key, name in table.items() if key in keys}
 
     def _trim(self, pixmap: QPixmap) -> QPixmap:
-
         if pixmap.isNull():
             return pixmap
         img = pixmap.toImage().convertToFormat(QImage.Format_ARGB32)
@@ -88,7 +85,6 @@ class GameCanvas(QWidget):
         frames = []
         if folder.exists():
             paths = sorted(folder.glob("*.png"), key=lambda p: int(p.stem) if p.stem.isdigit() else 999)
-
             for path in paths[:8]:
                 pixmap = self._trim(QPixmap(str(path)))
                 if not pixmap.isNull():
@@ -100,13 +96,9 @@ class GameCanvas(QWidget):
 
     def _load_assets(self):
         chars = Path(CHARACTERS_DIR)
-
-        fire_source = chars / "fireboy" / "FireBoy_stairs"
-        water_source = chars / "watergirl" / "WaterGirlStairs"
-        self.fire_frames = self._load_frames(
-            fire_source if fire_source.exists() else chars / "fireboy" / "FireBoy_running")
-        self.water_frames = self._load_frames(
-            water_source if water_source.exists() else chars / "watergirl" / "WaterGirl_running")
+        ui_game = Path(UI_DIR) / "game"
+        self.fire_frames = self._load_frames(chars / "fireboy" / "FireBoy_running")
+        self.water_frames = self._load_frames(chars / "watergirl" / "WaterGirl_running")
         self.fire_idle = self.fire_frames[0] if self.fire_frames else QPixmap()
         self.water_idle = self.water_frames[0] if self.water_frames else QPixmap()
 
@@ -125,149 +117,17 @@ class GameCanvas(QWidget):
         self.asset_lever_handle = self._asset("lever_handle.png")
         self.fire_door_asset = self._asset("fire_door.png")
         self.water_door_asset = self._asset("water_door.png")
-
-    def _walls(self):
-        return [R(0, 0, 28, 720), R(1172, 0, 28, 720), R(0, 0, 1200, 24), R(0, 706, 1200, 14)]
-
-    def _diamonds(self, points):
-        return [Diamond(R(x, y, 44, 44), owner) for x, y, owner in points]
-
-    def _level(self):
-        """Build four progressive maps with reachable jumps and sensible mechanisms."""
-        walls = self._walls()
-
-        if self.level_number == 1:
-            return Level(
-                1, "jungle", (58, 606), (116, 606), R(1060, 72, 72, 98), R(975, 72, 72, 98),
-                platforms=walls + [
-                    R(32, 670, 250, 28), R(340, 670, 258, 28), R(654, 670, 238, 28), R(952, 670, 208, 28),
-                    R(54, 560, 272, 26), R(384, 560, 238, 26), R(684, 560, 250, 26), R(1000, 560, 144, 26),
-                    R(62, 450, 210, 26), R(322, 450, 250, 26), R(632, 450, 282, 26), R(988, 450, 158, 26),
-                    R(52, 340, 274, 26), R(392, 340, 246, 26), R(710, 340, 236, 26), R(1004, 340, 142, 26),
-                    R(84, 232, 238, 26), R(396, 232, 260, 26), R(720, 232, 242, 26), R(970, 170, 188, 26),
-                ],
-                hazards=[
-                    Hazard(R(282, 682, 56, 18), "fire"), Hazard(R(598, 682, 56, 18), "water"),
-                    Hazard(R(892, 682, 56, 18), "poison"), Hazard(R(572, 444, 58, 18), "poison"),
-                ],
-                diamonds=self._diamonds([
-                    (170, 620, "fire"), (444, 510, "water"), (736, 510, "fire"),
-                    (1048, 400, "water"), (454, 286, "fire"), (778, 178, "water"),
-                ]),
-                switches=[], levers=[], movers=[], portals=[], boxes=[],
-            )
-
-        if self.level_number == 2:
-            return Level(
-                2, "temple", (62, 606), (120, 606), R(1060, 76, 72, 98), R(975, 76, 72, 98),
-                platforms=walls + [
-                    R(32, 670, 310, 28), R(396, 670, 240, 28), R(692, 670, 208, 28), R(954, 670, 208, 28),
-                    R(54, 558, 226, 26), R(356, 558, 232, 26), R(662, 558, 264, 26), R(996, 558, 150, 26),
-                    R(48, 446, 276, 26), R(396, 446, 222, 26), R(690, 446, 220, 26), R(980, 446, 166, 26),
-                    R(70, 334, 230, 26), R(370, 334, 258, 26), R(700, 334, 230, 26), R(1000, 334, 146, 26),
-                    R(56, 224, 240, 26), R(382, 224, 216, 26), R(710, 224, 248, 26), R(970, 174, 190, 26),
-                ],
-                hazards=[
-                    Hazard(R(342, 682, 52, 18), "poison"), Hazard(R(636, 682, 54, 18), "fire"),
-                    Hazard(R(900, 682, 52, 18), "water"), Hazard(R(618, 552, 42, 18), "poison"),
-                ],
-                diamonds=self._diamonds([
-                    (178, 508, "water"), (430, 396, "fire"), (746, 506, "water"),
-                    (1028, 396, "fire"), (425, 176, "water"), (770, 176, "fire"),
-                ]),
-                switches=[Switch(R(198, 650, 64, 18), "lift", "green")],
-                levers=[],
-                movers=[MovingSolid(R(600, 558, 86, 24), "lift", "green", R(600, 446, 86, 24), speed=0.045)],
-                portals=[], boxes=[Box(R(124, 626, 42, 42))],
-            )
-
-        if self.level_number == 3:
-            return Level(
-                3, "jungle", (58, 606), (116, 606), R(1060, 72, 72, 98), R(975, 72, 72, 98),
-                platforms=walls + [
-                    R(32, 670, 245, 28), R(332, 670, 246, 28), R(638, 670, 250, 28), R(944, 670, 218, 28),
-                    R(52, 556, 235, 26), R(350, 556, 262, 26), R(670, 556, 238, 26), R(976, 556, 170, 26),
-                    R(70, 442, 246, 26), R(374, 442, 220, 26), R(684, 442, 246, 26), R(1000, 442, 146, 26),
-                    R(48, 326, 258, 26), R(376, 326, 248, 26), R(694, 326, 214, 26), R(990, 326, 156, 26),
-                    R(64, 214, 238, 26), R(360, 214, 244, 26), R(690, 214, 188, 26), R(968, 170, 192, 26),
-                ],
-                hazards=[
-                    Hazard(R(278, 682, 52, 18), "water"), Hazard(R(580, 682, 56, 18), "fire"),
-                    Hazard(R(890, 682, 52, 18), "poison"), Hazard(R(594, 436, 86, 18), "water"),
-                ],
-                diamonds=self._diamonds([
-                    (145, 506, "fire"), (420, 506, "water"), (744, 392, "fire"),
-                    (1035, 278, "water"), (416, 164, "fire"), (760, 164, "water"),
-                ]),
-                switches=[],
-                levers=[Lever(R(754, 404, 56, 38), "exit_bridge", "yellow")],
-                movers=[MovingSolid(R(878, 214, 86, 24), "exit_bridge", "yellow", R(878, 170, 86, 24), speed=0.05)],
-                portals=[Portal(R(230, 606, 48, 48), 1, "purple"), Portal(R(658, 272, 48, 48), 1, "purple")],
-                boxes=[],
-            )
-
-        return Level(
-            4, "temple", (58, 606), (116, 606), R(1060, 72, 72, 98), R(975, 72, 72, 98),
-            platforms=walls + [
-                R(32, 670, 250, 28), R(344, 670, 220, 28), R(636, 670, 240, 28), R(944, 670, 218, 28),
-                R(48, 560, 235, 26), R(342, 560, 230, 26), R(640, 560, 240, 26), R(974, 560, 172, 26),
-                R(64, 446, 252, 26), R(386, 446, 214, 26), R(680, 446, 246, 26), R(992, 446, 154, 26),
-                R(48, 330, 220, 26), R(334, 330, 248, 26), R(672, 330, 252, 26), R(996, 330, 150, 26),
-                R(62, 216, 238, 26), R(374, 216, 230, 26), R(698, 216, 226, 26), R(968, 170, 192, 26),
-            ],
-            hazards=[
-                Hazard(R(282, 682, 60, 18), "fire"), Hazard(R(566, 682, 68, 18), "water"),
-                Hazard(R(878, 682, 64, 18), "poison"), Hazard(R(600, 440, 76, 18), "poison"),
-            ],
-            diamonds=self._diamonds([
-                (142, 512, "fire"), (420, 512, "water"), (734, 396, "fire"),
-                (1034, 396, "water"), (426, 164, "water"), (766, 164, "fire"),
-            ]),
-            switches=[Switch(R(176, 650, 64, 18), "central_lift", "green"),
-                      Switch(R(746, 540, 64, 18), "central_lift", "orange")],
-            levers=[],
-            movers=[MovingSolid(R(598, 560, 82, 24), "central_lift", "green", R(598, 446, 82, 24), speed=0.045)],
-            portals=[Portal(R(1016, 604, 48, 48), 1, "purple"), Portal(R(300, 278, 48, 48), 1, "purple")],
-            boxes=[Box(R(94, 626, 42, 42))],
-        )
+        self.asset_pause_menu = QPixmap(str(ui_game / "pause_menu_exact.png"))
+        self.asset_pause_emerald = QPixmap(str(ui_game / "pause_emerald_exact.png"))
 
     def set_level(self, level_number: int):
         self.level_number = max(1, min(4, int(level_number)))
         self.reset_level()
 
-    def _fit_to_original_viewport(self, level):
-
-        sx = self.WORLD_W / self.SOURCE_W
-        sy = self.WORLD_H / self.SOURCE_H
-
-        def mapped(rect):
-            return R(rect.x() * sx, rect.y() * sy, rect.width() * sx, rect.height() * sy)
-
-        level.fire_spawn = (level.fire_spawn[0] * sx, level.fire_spawn[1] * sy)
-        level.water_spawn = (level.water_spawn[0] * sx, level.water_spawn[1] * sy)
-        level.platforms = [mapped(rect) for rect in level.platforms]
-        level.hazards = [Hazard(mapped(item.rect), item.kind) for item in level.hazards]
-        level.diamonds = [Diamond(mapped(item.rect), item.owner, item.collected) for item in level.diamonds]
-        level.switches = [Switch(mapped(item.rect), item.target, item.color, item.active) for item in level.switches]
-        level.levers = [Lever(mapped(item.rect), item.target, item.color, item.active) for item in level.levers]
-        level.movers = [
-            MovingSolid(mapped(item.rect), item.target, item.color, mapped(item.to_rect), item.progress, item.speed,
-                        item.vanish) for item in level.movers]
-        level.portals = [Portal(mapped(item.rect), item.pair, item.color) for item in level.portals]
-        level.boxes = [Box(mapped(item.rect), item.vx, item.vy) for item in level.boxes]
-
-        def fitted_door(rect):
-            transformed = mapped(rect)
-            return R(transformed.x(), transformed.bottom() - 86, 58, 86)
-
-        level.fire_door = fitted_door(level.fire_door)
-        level.water_door = fitted_door(level.water_door)
-        return level
-
     def reset_level(self):
         self.keys.clear()
         self.remote_keys.clear()
-        self.data = self._fit_to_original_viewport(self._level())
+        self.data = create_level(self.level_number)
         fx, fy = self.data.fire_spawn
         wx, wy = self.data.water_spawn
         self.fire = Player("Fireboy", "fire", fx, fy, fx, fy, w=self.PLAYER_W, h=self.PLAYER_H)
@@ -277,8 +137,7 @@ class GameCanvas(QWidget):
         self.diamonds = [Diamond(QRectF(d.rect), d.owner, False) for d in self.data.diamonds]
         self.switches = [Switch(QRectF(s.rect), s.target, s.color, False) for s in self.data.switches]
         self.levers = [Lever(QRectF(l.rect), l.target, l.color, False) for l in self.data.levers]
-        self.movers = [MovingSolid(QRectF(m.rect), m.target, m.color, QRectF(m.to_rect), 0.0, m.speed, m.vanish) for m
-                       in self.data.movers]
+        self.movers = [MovingSolid(QRectF(m.rect), m.target, m.color, QRectF(m.to_rect), 0.0, m.speed, m.vanish) for m in self.data.movers]
         self.portals = [Portal(QRectF(p.rect), p.pair, p.color) for p in self.data.portals]
         self.boxes = [Box(QRectF(b.rect), 0.0, 0.0) for b in self.data.boxes]
         self._last_lever = False
@@ -330,9 +189,9 @@ class GameCanvas(QWidget):
         active = set()
         for switch in self.switches:
             switch.active = (
-                    self.fire.rect.intersects(switch.rect)
-                    or self.water.rect.intersects(switch.rect)
-                    or any(box.rect.intersects(switch.rect) for box in self.boxes)
+                self.fire.rect.intersects(switch.rect)
+                or self.water.rect.intersects(switch.rect)
+                or any(box.rect.intersects(switch.rect) for box in self.boxes)
             )
             if switch.active:
                 active.add(switch.target)
@@ -378,29 +237,40 @@ class GameCanvas(QWidget):
         self.update()
 
     def _input(self):
-        local = self._key_names(self.keys)
-        remote = set(self.remote_keys)
-        if self._network is not None and self._network.is_host() and self._network.is_connected():
-            fire_keys, water_keys = local, remote
-        elif self._network is not None and self._network.is_client() and self._network.is_connected():
-            fire_keys, water_keys = remote, local
-        else:
-            fire_keys = water_keys = local
+        if self._network is None or not self._network.is_connected():
+            self.fire.vx = 0
+            self.water.vx = 0
+            return
 
-        self.fire.vx = (-self.MOVE if "A" in fire_keys else 0) + (self.MOVE if "D" in fire_keys else 0)
-        self.water.vx = (-self.MOVE if "LEFT" in water_keys else 0) + (self.MOVE if "RIGHT" in water_keys else 0)
-        if self.fire.vx:
-            self.fire.facing = 1 if self.fire.vx > 0 else -1
-        if self.water.vx:
-            self.water.facing = 1 if self.water.vx > 0 else -1
-        if "W" in fire_keys and self.fire.on_ground:
-            self.fire.vy = self.JUMP
-            self.fire.on_ground = False
-            self._audio.play_effect("jump_fire")
-        if "UP" in water_keys and self.water.on_ground:
-            self.water.vy = self.JUMP
-            self.water.on_ground = False
-            self._audio.play_effect("jump_water")
+        local_keys = self._key_names(self.keys)
+        remote_keys = set(self.remote_keys)
+        if self._network.is_host():
+            host_keys, guest_keys = local_keys, remote_keys
+        else:
+            host_keys, guest_keys = remote_keys, local_keys
+        controls = {self._gm.player1: host_keys, self._gm.player2: guest_keys}
+        self._control_online_player(self.fire, controls.get("Fireboy", set()))
+        self._control_online_player(self.water, controls.get("Watergirl", set()))
+
+    def _control_online_player(self, player, keys):
+        left = "A" in keys or "LEFT" in keys
+        right = "D" in keys or "RIGHT" in keys
+        jump = "W" in keys or "UP" in keys
+        player.vx = (-self.MOVE if left else 0) + (self.MOVE if right else 0)
+        self._face_player(player)
+        sound = "jump_fire" if player.kind == "fire" else "jump_water"
+        self._jump(player, jump, sound)
+
+    @staticmethod
+    def _face_player(player):
+        if player.vx:
+            player.facing = 1 if player.vx > 0 else -1
+
+    def _jump(self, player, pressed, sound):
+        if pressed and player.on_ground:
+            player.vy = self.JUMP
+            player.on_ground = False
+            self._audio.play_effect(sound)
 
     def _move_movers(self):
         active = self._active_targets()
@@ -421,8 +291,7 @@ class GameCanvas(QWidget):
                 self._audio.play_effect("platform")
             mover._was_moving = True
             for player in (self.fire, self.water):
-                standing = abs(
-                    player.rect.bottom() - before.top()) <= 7 and player.rect.right() > before.left() and player.rect.left() < before.right()
+                standing = abs(player.rect.bottom() - before.top()) <= 7 and player.rect.right() > before.left() and player.rect.left() < before.right()
                 if standing:
                     player.x += dx
                     player.y += dy
@@ -494,12 +363,15 @@ class GameCanvas(QWidget):
                 continue
             if diamond.owner == "fire" and self.fire.rect.intersects(diamond.rect):
                 diamond.collected = True
-                self._gm.add_point(1, 10)
+                self._gm.add_point(self._player_number("Fireboy"), 10)
                 self._audio.play_effect("diamond")
             elif diamond.owner == "water" and self.water.rect.intersects(diamond.rect):
                 diamond.collected = True
-                self._gm.add_point(2, 10)
+                self._gm.add_point(self._player_number("Watergirl"), 10)
                 self._audio.play_effect("diamond")
+
+    def _player_number(self, character):
+        return 1 if self._gm.player1 == character else 2
 
     def _check_hazards(self):
         for hazard in self.hazards:
@@ -518,8 +390,7 @@ class GameCanvas(QWidget):
                 continue
             for portal in self.portals:
                 if player.rect.intersects(portal.rect):
-                    other = next((candidate for candidate in self.portals if
-                                  candidate.pair == portal.pair and candidate is not portal), None)
+                    other = next((candidate for candidate in self.portals if candidate.pair == portal.pair and candidate is not portal), None)
                     if other:
                         player.x = other.rect.center().x() - player.w / 2
                         player.y = other.rect.top() - player.h - 3
@@ -533,13 +404,12 @@ class GameCanvas(QWidget):
         fire_zone = self.data.fire_door.adjusted(-8, -4, 8, 6)
         water_zone = self.data.water_door.adjusted(-8, -4, 8, 6)
         if self.fire.rect.intersects(fire_zone) and self.water.rect.intersects(water_zone):
-            self._gm.finish()
+            self._gm.complete_level()
 
     def _update_particles(self):
         if self.frame % 7 == 0:
             self._add_particle(self.fire.x + self.fire.w / 2, self.fire.y + self.fire.h - 5, QColor("#ff6d17"), True)
-            self._add_particle(self.water.x + self.water.w / 2, self.water.y + self.water.h - 5, QColor("#39c9ff"),
-                               False)
+            self._add_particle(self.water.x + self.water.w / 2, self.water.y + self.water.h - 5, QColor("#39c9ff"), False)
         alive = []
         for particle in self.particles:
             particle.life -= 1
@@ -562,14 +432,12 @@ class GameCanvas(QWidget):
         for _ in range(7):
             angle = random.random() * math.tau
             speed = random.uniform(1.0, 3.2)
-            self.particles.append(Particle(center.x(), center.y(), math.cos(angle) * speed, math.sin(angle) * speed,
-                                           random.randint(12, 22), color, random.uniform(2.5, 5.0)))
+            self.particles.append(Particle(center.x(), center.y(), math.cos(angle) * speed, math.sin(angle) * speed, random.randint(12, 22), color, random.uniform(2.5, 5.0)))
 
     def _scaled_asset(self, key, pixmap, width, height):
         cache_key = (key, int(width), int(height))
         if cache_key not in self._pixmap_cache:
-            self._pixmap_cache[cache_key] = pixmap.scaled(int(width), int(height), Qt.IgnoreAspectRatio,
-                                                          Qt.FastTransformation)
+            self._pixmap_cache[cache_key] = pixmap.scaled(int(width), int(height), Qt.IgnoreAspectRatio, Qt.FastTransformation)
         return self._pixmap_cache[cache_key]
 
     def _rebuild_static_layer(self):
@@ -612,6 +480,7 @@ class GameCanvas(QWidget):
         self._draw_player(painter, self.water, self.water_frames, self.water_idle, QColor("#35caff"))
         self._draw_timer(painter)
         self._draw_sound(painter)
+        self._draw_help(painter)
 
     def _draw_background(self, painter):
         texture = self.texture_jungle if self.data.theme == "jungle" else self.texture_temple
@@ -625,6 +494,9 @@ class GameCanvas(QWidget):
 
     def _draw_platform(self, painter, rect):
         visible = self._r(rect)
+        if visible.height() > visible.width() * 2:
+            self._draw_vertical_barrier(painter, visible, "wall")
+            return
         if self.asset_platform.isNull():
             painter.fillRect(visible, QColor("#775335"))
             return
@@ -636,11 +508,26 @@ class GameCanvas(QWidget):
         painter.drawTiledPixmap(visible, tile)
         painter.restore()
 
+    def _draw_vertical_barrier(self, painter, visible, key):
+        if self.asset_platform.isNull():
+            painter.fillRect(visible, QColor("#775335"))
+            return
+        rotated = self.asset_platform.transformed(QTransform().rotate(90))
+        tile_w = max(18, int(visible.width()))
+        tile_h = max(58, int(tile_w * 3.2))
+        tile = self._scaled_asset(key, rotated, tile_w, tile_h)
+        painter.save()
+        painter.setClipRect(visible)
+        painter.drawTiledPixmap(visible, tile)
+        painter.restore()
+
     def _draw_mover(self, painter, mover):
         visible = self._r(self._mover_rect(mover))
-        tile = self._scaled_asset("mover", self.asset_platform, visible.width(),
-                                  visible.height()) if not self.asset_platform.isNull() else QPixmap()
-        if not tile.isNull():
+        vertical = visible.height() > visible.width() * 1.4
+        if vertical:
+            self._draw_vertical_barrier(painter, visible, "gate")
+        elif not self.asset_platform.isNull():
+            tile = self._scaled_asset("mover", self.asset_platform, visible.width(), visible.height())
             painter.drawPixmap(visible.toRect(), tile)
         else:
             painter.fillRect(visible, QColor("#d6bb6a"))
@@ -651,11 +538,9 @@ class GameCanvas(QWidget):
     def _draw_hazard(self, painter, hazard):
         visible = self._r(hazard.rect)
         if hazard.kind == "fire" and not self.asset_lava.isNull():
-            painter.drawPixmap(visible.toRect(),
-                               self._scaled_asset("lava", self.asset_lava, visible.width(), visible.height()))
+            painter.drawPixmap(visible.toRect(), self._scaled_asset("lava", self.asset_lava, visible.width(), visible.height()))
         elif hazard.kind == "water" and not self.asset_water.isNull():
-            painter.drawPixmap(visible.toRect(),
-                               self._scaled_asset("water", self.asset_water, visible.width(), visible.height()))
+            painter.drawPixmap(visible.toRect(), self._scaled_asset("water", self.asset_water, visible.width(), visible.height()))
         else:
             painter.setPen(Qt.NoPen)
             painter.setBrush(QColor("#52db42"))
@@ -666,8 +551,7 @@ class GameCanvas(QWidget):
     def _draw_switch(self, painter, switch):
         visible = self._r(switch.rect)
         if not self.asset_switch.isNull():
-            painter.drawPixmap(visible.toRect(),
-                               self._scaled_asset("switch", self.asset_switch, visible.width(), visible.height()))
+            painter.drawPixmap(visible.toRect(), self._scaled_asset("switch", self.asset_switch, visible.width(), visible.height()))
         else:
             painter.fillRect(visible, QColor("#53e45c"))
         if switch.active:
@@ -676,18 +560,22 @@ class GameCanvas(QWidget):
 
     def _draw_lever(self, painter, lever):
         visible = self._r(lever.rect)
+        base = QRectF(visible.x(), visible.bottom() - visible.height() * .45, visible.width(), visible.height() * .45)
         if not self.asset_lever_base.isNull():
-            painter.drawPixmap(QRectF(visible.x(), visible.bottom() - visible.height() * .45, visible.width(),
-                                      visible.height() * .45).toRect(),
-                               self._scaled_asset("leverbase", self.asset_lever_base, visible.width(),
-                                                  visible.height() * .45))
-        pivot = QPointF(visible.center().x(), visible.bottom() - visible.height() * 0.35)
-        tip = QPointF(pivot.x() + (visible.width() * 0.31 if lever.active else -visible.width() * 0.31),
-                      visible.top() + 5)
-        painter.setPen(QPen(QColor("#ffe044"), 6))
-        painter.drawLine(pivot, tip)
-        painter.setBrush(QColor("#ffe044"))
-        painter.drawEllipse(tip, 5, 5)
+            painter.drawPixmap(base.toRect(), self._scaled_asset("lever_base", self.asset_lever_base, base.width(), base.height()))
+        pivot = QPointF(visible.center().x(), visible.bottom() - visible.height() * 0.32)
+        if not self.asset_lever_handle.isNull():
+            handle = self._scaled_asset("lever_handle", self.asset_lever_handle, visible.width() * 0.28, visible.height() * 0.8)
+            painter.save()
+            painter.translate(pivot)
+            painter.rotate(30 if lever.active else -30)
+            target = QRectF(-handle.width() / 2, -handle.height() + 7, handle.width(), handle.height())
+            painter.drawPixmap(target.toRect(), handle)
+            painter.restore()
+        else:
+            tip = QPointF(pivot.x() + (visible.width() * 0.31 if lever.active else -visible.width() * 0.31), visible.top() + 5)
+            painter.setPen(QPen(QColor("#ffe044"), 6))
+            painter.drawLine(pivot, tip)
 
     def _draw_portal(self, painter, portal):
         visible = self._r(portal.rect)
@@ -701,8 +589,7 @@ class GameCanvas(QWidget):
     def _draw_box(self, painter, rect):
         visible = self._r(rect)
         if not self.asset_box.isNull():
-            painter.drawPixmap(visible.toRect(),
-                               self._scaled_asset("box", self.asset_box, visible.width(), visible.height()))
+            painter.drawPixmap(visible.toRect(), self._scaled_asset("box", self.asset_box, visible.width(), visible.height()))
         else:
             painter.fillRect(visible, QColor("#e5dfbe"))
 
@@ -713,8 +600,7 @@ class GameCanvas(QWidget):
     def _draw_door(self, painter, rect, asset, fallback):
         visible = self._r(rect)
         if not asset.isNull():
-            painter.drawPixmap(visible.toRect(),
-                               self._scaled_asset("door" + fallback.name(), asset, visible.width(), visible.height()))
+            painter.drawPixmap(visible.toRect(), self._scaled_asset("door" + fallback.name(), asset, visible.width(), visible.height()))
         else:
             painter.setBrush(QColor("#353536"))
             painter.setPen(QPen(fallback, 4))
@@ -724,12 +610,10 @@ class GameCanvas(QWidget):
         visible = self._r(diamond.rect)
         asset = self.asset_diamond_red if diamond.owner == "fire" else self.asset_diamond_blue
         if not asset.isNull():
-            painter.drawPixmap(visible.toRect(),
-                               self._scaled_asset("gem_" + diamond.owner, asset, visible.width(), visible.height()))
+            painter.drawPixmap(visible.toRect(), self._scaled_asset("gem_" + diamond.owner, asset, visible.width(), visible.height()))
         else:
             center = visible.center()
-            shape = QPolygonF([QPointF(center.x(), visible.top()), QPointF(visible.right(), center.y()),
-                               QPointF(center.x(), visible.bottom()), QPointF(visible.left(), center.y())])
+            shape = QPolygonF([QPointF(center.x(), visible.top()), QPointF(visible.right(), center.y()), QPointF(center.x(), visible.bottom()), QPointF(visible.left(), center.y())])
             painter.setBrush(QColor("#ff3939" if diamond.owner == "fire" else "#35d9ff"))
             painter.drawPolygon(shape)
 
@@ -740,23 +624,13 @@ class GameCanvas(QWidget):
             pixmap = frames[(player.anim // 3) % len(frames)]
         if pixmap.isNull():
             painter.setBrush(fallback)
-            painter.drawRoundedRect(visible, 10, 10)
+            painter.drawRoundedRect(visible, 12, 12)
             return
         key = "fire" if player.kind == "fire" else "water"
-        cache_key = (key, (player.anim // 3) % 8, int(visible.width()), int(visible.height()))
-        sprite = self._pixmap_cache.get(cache_key)
-        if sprite is None:
-            sprite = pixmap.scaled(int(visible.width()), int(visible.height()), Qt.KeepAspectRatio,
-                                   Qt.SmoothTransformation)
-            self._pixmap_cache[cache_key] = sprite
+        sprite = self._scaled_asset(key + str((player.anim // 3) % 8), pixmap, visible.width(), visible.height())
         if player.facing < 0:
             sprite = sprite.transformed(QTransform().scale(-1, 1))
-        target = QRectF(
-            visible.center().x() - sprite.width() / 2,
-            visible.bottom() - sprite.height(),
-            sprite.width(), sprite.height(),
-        )
-        painter.drawPixmap(target.toRect(), sprite)
+        painter.drawPixmap(visible.toRect(), sprite)
 
     def _draw_particles(self, painter):
         painter.setPen(Qt.NoPen)
@@ -768,23 +642,22 @@ class GameCanvas(QWidget):
             painter.drawEllipse(QPointF(particle.x * sx, particle.y * sy), particle.size * sx, particle.size * sy)
 
     def _draw_timer(self, painter):
-        width, height = 132, 52
+        width, height = 152, 54
         x = (self.width() - width) / 2
         painter.setBrush(QColor(35, 35, 35, 235))
         painter.setPen(QPen(QColor("#080808"), 4))
         painter.drawRoundedRect(QRectF(x, 5, width, height), 7, 7)
         seconds = max(0, int(self._gm.time_left))
         text = f"{seconds // 60:02d}:{seconds % 60:02d}"
-        painter.setFont(QFont("Arial", 26, QFont.Bold))
+        painter.setFont(QFont("Arial", 28, QFont.Bold))
         painter.setPen(QColor("#ffd42d"))
         painter.drawText(QRectF(x, 5, width, height), Qt.AlignCenter, text)
 
     def _draw_sound(self, painter):
-        self.sound_button_rect = QRectF(self.width() - 57, 12, 42, 42)
+        self.sound_button_rect = QRectF(self.width() - 64, 12, 48, 48)
         visible = self.sound_button_rect
         if not self.asset_volume.isNull():
-            painter.drawPixmap(visible.toRect(),
-                               self._scaled_asset("volume", self.asset_volume, visible.width(), visible.height()))
+            painter.drawPixmap(visible.toRect(), self._scaled_asset("volume", self.asset_volume, visible.width(), visible.height()))
         else:
             painter.setFont(QFont("Arial", 23, QFont.Bold))
             painter.setPen(QColor("#ffd72b"))
@@ -796,107 +669,9 @@ class GameCanvas(QWidget):
     def _draw_help(self, painter):
         painter.setPen(QColor("#ffe36c"))
         painter.setFont(QFont("Arial", 10, QFont.Bold))
-        painter.drawText(12, self.height() - 12,
-                         f"Level {self.level_number} | Fireboy: A/D/W + E | Watergirl: Left/Right/Up + Down/Enter")
-
-
-class GameViewport(QWidget):
-
-    def __init__(self, canvas: GameCanvas, parent=None):
-        super().__init__(parent)
-        self.canvas = canvas
-        self.canvas.setParent(self)
-        self.setStyleSheet("background:#080808;")
-
-        elements = Path(ELEMENTS_DIR)
-        emerald = (elements / "pause_emerald.png").as_posix()
-        emerald_over = (elements / "pause_emerald_hover.png").as_posix()
-        emerald_down = (elements / "pause_emerald_down.png").as_posix()
-        panel_img = (elements / "pause_panel.png").as_posix()
-
-        self.gem_button = QPushButton(self)
-        self.gem_button.setCursor(Qt.PointingHandCursor)
-        self.gem_button.setStyleSheet(f"""
-            QPushButton {{ border:none; background:transparent; image:url('{emerald}'); }}
-            QPushButton:hover {{ image:url('{emerald_over}'); }}
-            QPushButton:pressed {{ image:url('{emerald_down}'); }}
-        """)
-
-        self.overlay = QFrame(self)
-        self.overlay.setStyleSheet("background-color: rgba(0, 0, 0, 138);")
-        self.overlay.hide()
-
-        self.card = QFrame(self.overlay)
-        self.card.setObjectName("pauseCard")
-        self.card.setStyleSheet(f"""
-            QFrame#pauseCard {{ border-image: url('{panel_img}') 0 0 0 0 stretch stretch; background:transparent; }}
-            QLabel {{ background:transparent; color:#2b2118; font-weight:bold; }}
-            QPushButton {{
-                background:transparent; border:none; color:#2d261e;
-                font-family:'Times New Roman'; font-size:27px; font-weight:bold;
-            }}
-            QPushButton:hover {{ color:#f2cc34; }}
-        """)
-        panel = QVBoxLayout(self.card)
-        panel.setContentsMargins(62, 68, 62, 42)
-        panel.setSpacing(8)
-
-        self.btn_resume = QPushButton("RESUME")
-        self.btn_reset = QPushButton("RETRY LEVEL")
-        self.lbl_blue = QLabel("◆  X 0")
-        self.lbl_red = QLabel("◆  X 0")
-        self.lbl_blue.setStyleSheet(
-            "background:transparent; color:#21bfff; font-family:'Times New Roman'; font-size:27px;")
-        self.lbl_red.setStyleSheet(
-            "background:transparent; color:#ef322a; font-family:'Times New Roman'; font-size:27px;")
-        self.btn_menu = QPushButton("MAIN MENU")
-        for item in (self.btn_resume, self.btn_reset, self.lbl_blue, self.lbl_red, self.btn_menu):
-            if isinstance(item, QLabel):
-                item.setAlignment(Qt.AlignCenter)
-            panel.addWidget(item)
-        panel.setStretch(0, 1)
-        panel.setStretch(1, 1)
-        panel.setStretch(2, 1)
-        panel.setStretch(3, 1)
-        panel.setStretch(4, 1)
-
-    def set_scores(self, fire_score: int, water_score: int):
-        self.lbl_blue.setText(f"◆  X {water_score // 10}")
-        self.lbl_red.setText(f"◆  X {fire_score // 10}")
-
-    def show_pause(self, fire_score: int, water_score: int):
-        self.set_scores(fire_score, water_score)
-        self.overlay.show()
-        self.overlay.raise_()
-        self.card.raise_()
-
-    def hide_pause(self):
-        self.overlay.hide()
-        self.gem_button.raise_()
-
-    def resizeEvent(self, event):
-        margin = 8
-        available_w = max(10, self.width() - margin * 2)
-        available_h = max(10, self.height() - margin * 2)
-        ratio = 4 / 3
-        game_w = min(available_w, int(available_h * ratio))
-        game_h = int(game_w / ratio)
-        if game_h > available_h:
-            game_h = available_h
-            game_w = int(game_h * ratio)
-        x = (self.width() - game_w) // 2
-        y = (self.height() - game_h) // 2
-        self.canvas.setGeometry(x, y, game_w, game_h)
-        self.overlay.setGeometry(x, y, game_w, game_h)
-
-        gem_size = max(60, min(82, int(game_h * 0.094)))
-        self.gem_button.setGeometry(x + game_w // 2 - gem_size // 2, y + game_h - gem_size + 16, gem_size, gem_size)
-        self.gem_button.raise_()
-
-        card_h = min(int(game_h * 0.70), 492)
-        card_w = int(card_h * 336 / 325)
-        self.card.setGeometry((game_w - card_w) // 2, (game_h - card_h) // 2, card_w, card_h)
-        super().resizeEvent(event)
+        character = self._network.local_character if self._network is not None else ""
+        text = f"Nivel {self.level_number} | Tu personaje: {character or '-'} | Mover: A/D o flechas | Saltar: W o arriba"
+        painter.drawText(12, self.height() - 12, text)
 
 
 class GameScreen(QWidget):
@@ -911,74 +686,199 @@ class GameScreen(QWidget):
 
     def _build_ui(self):
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        layout.setSpacing(5)
+        layout.setContentsMargins(8, 8, 8, 8)
+
+        top = QHBoxLayout()
+        self.lbl_player1 = QLabel("Jugador 1")
+        self.lbl_level = QLabel("Nivel 1")
+        self.lbl_timer = QLabel(f"Tiempo: {GAME_DURATION_SECONDS}s")
+        self.lbl_player2 = QLabel("Jugador 2")
+        for label in (self.lbl_player1, self.lbl_level, self.lbl_timer, self.lbl_player2):
+            label.setFont(QFont("Arial", 13, QFont.Bold))
+            label.setAlignment(Qt.AlignCenter)
+            top.addWidget(label)
 
         self.canvas = GameCanvas(self._gm, self._audio, self._network, self)
-        self.viewport = GameViewport(self.canvas, self)
-        self.btn_menu = self.viewport.btn_menu
-        self.btn_reset = self.viewport.btn_reset
-        self.btn_pause = self.viewport.gem_button
-        layout.addWidget(self.viewport, 1)
-        self.setStyleSheet("background-color:#080808;")
+        self._create_pause_panel()
+
+        bottom = QHBoxLayout()
+        self.lbl_score1 = QLabel("Jugador 1: 0")
+        self.lbl_score2 = QLabel("Jugador 2: 0")
+        for label in (self.lbl_score1, self.lbl_score2):
+            label.setFont(QFont("Arial", 14, QFont.Bold))
+            label.setMinimumWidth(220)
+
+        self.lbl_score2.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        self.btn_emerald = QPushButton()
+        self.btn_emerald.setObjectName("emeraldButton")
+        self.btn_emerald.setFlat(True)
+        self.btn_emerald.setFixedSize(82, 82)
+        if not self.canvas.asset_pause_emerald.isNull():
+            self.btn_emerald.setIcon(QIcon(self.canvas.asset_pause_emerald))
+            self.btn_emerald.setIconSize(QSize(74, 74))
+
+        bottom.addWidget(self.lbl_score1)
+        bottom.addStretch()
+        bottom.addWidget(self.btn_emerald)
+        bottom.addStretch()
+        bottom.addWidget(self.lbl_score2)
+
+        layout.addLayout(top)
+        layout.addWidget(self.canvas, 1)
+        layout.addLayout(bottom)
+        self._apply_styles()
+
+    def _create_pause_panel(self):
+        self.pause_panel = QLabel(self.canvas)
+        self.pause_panel.setObjectName("pausePanel")
+        self.pause_panel.setScaledContents(True)
+        self.pause_panel.hide()
+
+        self.btn_pause = QPushButton(self.pause_panel)
+        self.btn_reset = QPushButton(self.pause_panel)
+        self.btn_menu = QPushButton(self.pause_panel)
+        for button in (self.btn_pause, self.btn_reset, self.btn_menu):
+            button.setObjectName("menuHitBox")
+            button.setCursor(Qt.PointingHandCursor)
+
+        self.lbl_menu_blue = QLabel("0", self.pause_panel)
+        self.lbl_menu_red = QLabel("0", self.pause_panel)
+        for label in (self.lbl_menu_blue, self.lbl_menu_red):
+            label.setObjectName("menuCount")
+            label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
 
     def _connect_signals(self):
+        self._gm.tick.connect(self._on_tick)
         self._gm.score_changed.connect(self._on_score_changed)
-        self.btn_pause.clicked.connect(self._open_pause_menu)
-        self.viewport.btn_resume.clicked.connect(self._resume_level)
+        self.btn_emerald.clicked.connect(self._open_pause_menu)
         self.btn_reset.clicked.connect(self._restart_level)
+        self.btn_pause.clicked.connect(self._close_pause_menu)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self._place_pause_panel()
+
+    def _place_pause_panel(self):
+        if not hasattr(self, "pause_panel"):
+            return
+        ratio_w, ratio_h = 620, 632
+        max_w = min(480, max(310, self.canvas.width() - 80))
+        width = max_w
+        height = int(width * ratio_h / ratio_w)
+        if height > self.canvas.height() - 40:
+            height = self.canvas.height() - 40
+            width = int(height * ratio_w / ratio_h)
+        x = (self.canvas.width() - width) // 2
+        y = max(6, self.canvas.height() - height + 8)
+        self.pause_panel.setGeometry(x, y, width, height)
+        if not self.canvas.asset_pause_menu.isNull():
+            self.pause_panel.setPixmap(self.canvas.asset_pause_menu.scaled(width, height, Qt.IgnoreAspectRatio, Qt.SmoothTransformation))
+
+        self.btn_pause.setGeometry(int(width * 0.19), int(height * 0.20), int(width * 0.62), int(height * 0.12))
+        self.btn_reset.setGeometry(int(width * 0.15), int(height * 0.35), int(width * 0.70), int(height * 0.12))
+        self.btn_menu.setGeometry(int(width * 0.18), int(height * 0.77), int(width * 0.64), int(height * 0.12))
+
+        count_w = int(width * 0.065)
+        count_h = int(height * 0.075)
+        self.lbl_menu_blue.setGeometry(int(width * 0.56), int(height * 0.505), count_w, count_h)
+        self.lbl_menu_red.setGeometry(int(width * 0.56), int(height * 0.612), count_w, count_h)
+
+        font = QFont("Times New Roman", max(14, width // 20), QFont.Bold)
+        self.lbl_menu_blue.setFont(font)
+        self.lbl_menu_red.setFont(font)
+
+    def _open_pause_menu(self):
+        if not self._gm.is_running:
+            return
+        self._gm.pause()
+        self.canvas.stop()
+        self._place_pause_panel()
+        self.pause_panel.show()
+        self.pause_panel.raise_()
+        self.btn_emerald.hide()
+
+    def _close_pause_menu(self):
+        self.pause_panel.hide()
+        self.btn_emerald.show()
+        if self._gm.is_running:
+            self._gm.resume()
+            self.canvas.start()
 
     def set_level(self, level_number: int):
         self.current_level = max(1, min(4, int(level_number)))
         self.canvas.set_level(self.current_level)
+        self.lbl_level.setText(f"Nivel {self.current_level}")
 
     def reset(self):
-        self.viewport.hide_pause()
-        self.viewport.set_scores(0, 0)
+        self.pause_panel.hide()
+        self.btn_emerald.show()
+        self.lbl_player1.setText(f"{self._gm.name1} ({self._gm.player1})")
+        self.lbl_player2.setText(f"{self._gm.name2} ({self._gm.player2})")
+        self.lbl_level.setText(f"Nivel {self.current_level}")
+        self.lbl_score1.setText(f"{self._gm.name1}: 0")
+        self.lbl_score2.setText(f"{self._gm.name2}: 0")
+        self.lbl_menu_blue.setText("0")
+        self.lbl_menu_red.setText("0")
+        self.lbl_timer.setText(f"Tiempo: {GAME_DURATION_SECONDS}s")
         self.canvas.set_level(self.current_level)
 
     def _restart_level(self):
-        self.viewport.hide_pause()
-        self._audio.resume_music()
+        self.pause_panel.hide()
+        self.btn_emerald.show()
         self._gm.start()
         self.reset()
         self.canvas.start()
 
     def start_level(self):
-        self.viewport.hide_pause()
+        self.pause_panel.hide()
+        self.btn_emerald.show()
         self.canvas.start()
 
     def stop_level(self):
-        self.viewport.hide_pause()
+        self.pause_panel.hide()
         self.canvas.stop()
 
     def show_game_over(self, score1: int, score2: int, winner: str):
+        self.pause_panel.hide()
+        self.btn_emerald.show()
         message = QMessageBox(self)
-        message.setWindowTitle("Level Complete")
+        message.setWindowTitle("Nivel terminado")
         message.setText(
-            f"<b>Level {self.current_level} complete</b><br><br>"
-            f"{self._gm.player1}: <b>{score1}</b> points<br>"
-            f"{self._gm.player2}: <b>{score2}</b> points<br><br>"
-            f"Result: <b>{winner}</b>"
+            f"<b>Nivel {self.current_level} terminado</b><br><br>"
+            f"{self._gm.name1} ({self._gm.player1}): <b>{score1}</b> puntos<br>"
+            f"{self._gm.name2} ({self._gm.player2}): <b>{score2}</b> puntos<br><br>"
+            f"Resultado: <b>{winner}</b>"
         )
         message.exec()
 
-    def _open_pause_menu(self):
-        if not self._gm.is_running or not self.canvas.timer.isActive():
-            return
-        self._gm.pause()
-        self.canvas.stop()
-        self._audio.pause_music()
-        self.viewport.show_pause(self._gm.score1, self._gm.score2)
-
-    def _resume_level(self):
-        if not self._gm.is_running:
-            return
-        self.viewport.hide_pause()
-        self._gm.resume()
-        self._audio.resume_music()
-        self.canvas.start()
-        self.canvas.setFocus()
+    def _on_tick(self, seconds: int):
+        self.lbl_timer.setText(f"Tiempo: {seconds}s")
+        self.lbl_timer.setStyleSheet("color:#ff6767;font-weight:bold;" if seconds <= 10 else "color:#f6dfb4;")
 
     def _on_score_changed(self, score1: int, score2: int):
-        self.viewport.set_scores(score1, score2)
+        self.lbl_score1.setText(f"{self._gm.name1}: {score1}")
+        self.lbl_score2.setText(f"{self._gm.name2}: {score2}")
+        fire_score = score1 if self._gm.player1 == "Fireboy" else score2
+        water_score = score1 if self._gm.player1 == "Watergirl" else score2
+        self.lbl_menu_blue.setText(str(water_score // 10))
+        self.lbl_menu_red.setText(str(fire_score // 10))
+
+    def _apply_styles(self):
+        self.setStyleSheet("""
+            QWidget { background-color:#141414; color:#f6dfb4; }
+            #emeraldButton {
+                background-color:transparent; border:none; padding:0px;
+            }
+            #emeraldButton:hover { background-color:transparent; }
+            #pausePanel { background-color:transparent; }
+            #menuHitBox {
+                background-color:rgba(0, 0, 0, 0);
+                border:none;
+            }
+            #menuCount {
+                background-color:#636462;
+                color:#f0cf32;
+                font-weight:bold;
+            }
+        """)
