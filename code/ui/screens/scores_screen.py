@@ -1,3 +1,4 @@
+# Importa y organiza las herramientas necesarias
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QListWidget, QListWidgetItem, QPushButton, QVBoxLayout, QWidget
@@ -7,11 +8,13 @@ from logic.score_manager import ScoreManager
 
 # Muestra el historial individual
 class ScoresScreen(QWidget):
+    # Inicializa los datos necesarios
     def __init__(self, score_mgr: ScoreManager):
         super().__init__()
         self._score_mgr = score_mgr
         self._build_ui()
 
+    # Construye los elementos visuales
     def _build_ui(self):
         layout = QVBoxLayout(self)
         layout.setSpacing(15)
@@ -54,10 +57,12 @@ class ScoresScreen(QWidget):
             text = f"  {index:>2}. {name:<20} {character:<14} {entry.get('score', 0):>5} pts   {entry.get('duration', 0):>3}s"
             self.list_scores.addItem(QListWidgetItem(text))
 
+    # Borra el historial
     def _clear(self):
         self._score_mgr.clear()
         self.refresh()
 
+    # Aplica colores y estilos
     def _apply_styles(self):
         self.setStyleSheet("""
             QWidget { background-color: #2b1b12; color: #f6dfb4; }
