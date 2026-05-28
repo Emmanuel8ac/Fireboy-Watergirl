@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt, QTimer, QRectF, QPointF, QSize
 from PySide6.QtGui import QColor, QFont, QIcon, QImage, QPainter, QPen, QPixmap, QPolygonF, QTransform
 from PySide6.QtWidgets import QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QFrame, QMessageBox
 
-from config import GAME_DURATION_SECONDS, CHARACTERS_DIR, TEXTURES_DIR, ELEMENTS_DIR, UI_DIR
+from config import GAME_DURATION_SECONDS, CHARACTERS_DIR, TEXTURES_DIR, ELEMENTS_DIR, ORIGINAL_DIR
 from logic.game_manager import GameManager
 from logic.audio_manager import AudioManager
 from logic.network_manager import NetworkManager
@@ -14,26 +14,29 @@ from models.player import Player, Diamond, Hazard, Switch, Lever, MovingSolid, P
 from logic.level_builder import create_level
 
 
+# Crea rectángulos para colisiones
 def R(x, y, w, h):
     return QRectF(float(x), float(y), float(w), float(h))
 
 
+# Dibuja el mapa y procesa el movimiento
 class GameCanvas(QWidget):
 
     WORLD_W = 1200
     WORLD_H = 720
     GRAVITY = 0.66
-    MOVE = 5.6
-    JUMP = -15.4
+    MOVE = 5.4
+    JUMP = -14.8
     MAX_FALL = 17.0
-    PLAYER_W = 46.0
-    PLAYER_H = 64.0
+    PLAYER_W = 36.0
+    PLAYER_H = 56.0
 
     def __init__(self, game_mgr: GameManager, audio: AudioManager, network: NetworkManager = None, parent=None):
         super().__init__(parent)
         self._gm = game_mgr
         self._audio = audio
         self._network = network
+        self.local_test_mode = False
         self.remote_keys = set()
         if self._network is not None:
             self._network.remote_input_received.connect(self._on_remote_input)
@@ -94,9 +97,9 @@ class GameCanvas(QWidget):
     def _asset(self, name: str) -> QPixmap:
         return self._trim(QPixmap(str(Path(ELEMENTS_DIR) / name)))
 
+    # Carga personajes y elementos del juego
     def _load_assets(self):
         chars = Path(CHARACTERS_DIR)
-        ui_game = Path(UI_DIR) / "game"
         self.fire_frames = self._load_frames(chars / "fireboy" / "FireBoy_running")
         self.water_frames = self._load_frames(chars / "watergirl" / "WaterGirl_running")
         self.fire_idle = self.fire_frames[0] if self.fire_frames else QPixmap()
@@ -117,13 +120,20 @@ class GameCanvas(QWidget):
         self.asset_lever_handle = self._asset("lever_handle.png")
         self.fire_door_asset = self._asset("fire_door.png")
         self.water_door_asset = self._asset("water_door.png")
-        self.asset_pause_menu = QPixmap(str(ui_game / "pause_menu_exact.png"))
-        self.asset_pause_emerald = QPixmap(str(ui_game / "pause_emerald_exact.png"))
+        # Carga el panel original del menú
+        pause_source = Path(ORIGINAL_DIR) / "sprites" / "DefineSprite_666_PauseMenu" / "1.png"
+        original_pause = QPixmap(str(pause_source))
+        self.asset_pause_menu = original_pause.copy(145, 465, 418, 388)
+
+        # Carga la esmeralda original sin fondo visible
+        emerald_dir = Path(ORIGINAL_DIR) / "buttons" / "DefineButton2_665"
+        self.asset_emerald = self._trim(QPixmap(str(emerald_dir / "1_up.png")))
 
     def set_level(self, level_number: int):
         self.level_number = max(1, min(4, int(level_number)))
         self.reset_level()
 
+    # Coloca los elementos del nivel actual
     def reset_level(self):
         self.keys.clear()
         self.remote_keys.clear()
@@ -214,6 +224,7 @@ class GameCanvas(QWidget):
     def _solids(self):
         return self.platforms + self._solid_movers() + [box.rect for box in self.boxes]
 
+    # Actualiza la partida en cada cuadro
     def _frame(self):
         if not self._gm.is_running:
             return
@@ -236,13 +247,29 @@ class GameCanvas(QWidget):
         self._update_particles()
         self.update()
 
+    # Activa o desactiva la prueba local
+    def set_local_test_mode(self, enabled: bool):
+        self.local_test_mode = bool(enabled)
+        self.keys.clear()
+        self.remote_keys.clear()
+
+    # Aplica controles de red o de prueba local
     def _input(self):
+        local_keys = self._key_names(self.keys)
+        if self.local_test_mode:
+            self.fire.vx = (-self.MOVE if "A" in local_keys else 0) + (self.MOVE if "D" in local_keys else 0)
+            self.water.vx = (-self.MOVE if "LEFT" in local_keys else 0) + (self.MOVE if "RIGHT" in local_keys else 0)
+            self._face_player(self.fire)
+            self._face_player(self.water)
+            self._jump(self.fire, "W" in local_keys, "jump_fire")
+            self._jump(self.water, "UP" in local_keys, "jump_water")
+            return
+
         if self._network is None or not self._network.is_connected():
             self.fire.vx = 0
             self.water.vx = 0
             return
 
-        local_keys = self._key_names(self.keys)
         remote_keys = set(self.remote_keys)
         if self._network.is_host():
             host_keys, guest_keys = local_keys, remote_keys
@@ -272,6 +299,7 @@ class GameCanvas(QWidget):
             player.on_ground = False
             self._audio.play_effect(sound)
 
+    # Mueve plataformas y barreras activadas
     def _move_movers(self):
         active = self._active_targets()
         for mover in self.movers:
@@ -357,6 +385,7 @@ class GameCanvas(QWidget):
                     self._audio.play_effect("lever")
         self._last_lever = pressed
 
+    # Entrega puntos al jugador correcto
     def _collect_diamonds(self):
         for diamond in self.diamonds:
             if diamond.collected:
@@ -400,6 +429,7 @@ class GameCanvas(QWidget):
                         self._burst(other.rect.center(), QColor("#ba49ff"))
                     break
 
+    # Completa el nivel al usar ambas puertas
     def _check_doors(self):
         fire_zone = self.data.fire_door.adjusted(-8, -4, 8, 6)
         water_zone = self.data.water_door.adjusted(-8, -4, 8, 6)
@@ -456,6 +486,7 @@ class GameCanvas(QWidget):
         painter.end()
         self._static_dirty = False
 
+    # Dibuja todos los elementos del escenario
     def paintEvent(self, event):
         if self._static_dirty or self._static_layer.size() != self.size():
             self._rebuild_static_layer()
@@ -617,20 +648,32 @@ class GameCanvas(QWidget):
             painter.setBrush(QColor("#ff3939" if diamond.owner == "fire" else "#35d9ff"))
             painter.drawPolygon(shape)
 
+    # Dibuja personajes con la proporción de los recursos
     def _draw_player(self, painter, player, frames, idle, fallback):
         visible = self._r(player.rect)
         pixmap = idle
+        frame_number = 0
         if frames and abs(player.vx) > 0.1:
-            pixmap = frames[(player.anim // 3) % len(frames)]
+            frame_number = (player.anim // 3) % len(frames)
+            pixmap = frames[frame_number]
         if pixmap.isNull():
             painter.setBrush(fallback)
-            painter.drawRoundedRect(visible, 12, 12)
+            painter.drawRoundedRect(visible, 10, 10)
             return
         key = "fire" if player.kind == "fire" else "water"
-        sprite = self._scaled_asset(key + str((player.anim // 3) % 8), pixmap, visible.width(), visible.height())
+        cache_key = (key, frame_number, int(visible.width()), int(visible.height()), "proporcion")
+        sprite = self._pixmap_cache.get(cache_key)
+        if sprite is None:
+            sprite = pixmap.scaled(int(visible.width()), int(visible.height()), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            self._pixmap_cache[cache_key] = sprite
         if player.facing < 0:
             sprite = sprite.transformed(QTransform().scale(-1, 1))
-        painter.drawPixmap(visible.toRect(), sprite)
+        target = QRectF(
+            visible.center().x() - sprite.width() / 2,
+            visible.bottom() - sprite.height(),
+            sprite.width(), sprite.height(),
+        )
+        painter.drawPixmap(target.toRect(), sprite)
 
     def _draw_particles(self, painter):
         painter.setPen(Qt.NoPen)
@@ -666,14 +709,19 @@ class GameCanvas(QWidget):
             painter.setPen(QPen(QColor("#ee3c37"), 5))
             painter.drawLine(visible.left() + 5, visible.top() + 5, visible.right() - 5, visible.bottom() - 5)
 
+    # Muestra los controles de la partida
     def _draw_help(self, painter):
         painter.setPen(QColor("#ffe36c"))
         painter.setFont(QFont("Arial", 10, QFont.Bold))
-        character = self._network.local_character if self._network is not None else ""
-        text = f"Nivel {self.level_number} | Tu personaje: {character or '-'} | Mover: A/D o flechas | Saltar: W o arriba"
+        if self.local_test_mode:
+            text = f"Nivel {self.level_number} | Fireboy: A/D/W | Watergirl: flechas"
+        else:
+            character = self._network.local_character if self._network is not None else ""
+            text = f"Nivel {self.level_number} | Tu personaje: {character or '-'} | Mover: A/D o flechas | Saltar: W o arriba"
         painter.drawText(12, self.height() - 12, text)
 
 
+# Presenta la partida y el menú de pausa
 class GameScreen(QWidget):
     def __init__(self, game_mgr: GameManager, audio: AudioManager, network: NetworkManager = None):
         super().__init__()
@@ -681,6 +729,7 @@ class GameScreen(QWidget):
         self._audio = audio
         self._network = network
         self.current_level = 1
+        self.menu_open = False
         self._build_ui()
         self._connect_signals()
 
@@ -708,19 +757,8 @@ class GameScreen(QWidget):
         for label in (self.lbl_score1, self.lbl_score2):
             label.setFont(QFont("Arial", 14, QFont.Bold))
             label.setMinimumWidth(220)
-
         self.lbl_score2.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        self.btn_emerald = QPushButton()
-        self.btn_emerald.setObjectName("emeraldButton")
-        self.btn_emerald.setFlat(True)
-        self.btn_emerald.setFixedSize(82, 82)
-        if not self.canvas.asset_pause_emerald.isNull():
-            self.btn_emerald.setIcon(QIcon(self.canvas.asset_pause_emerald))
-            self.btn_emerald.setIconSize(QSize(74, 74))
-
         bottom.addWidget(self.lbl_score1)
-        bottom.addStretch()
-        bottom.addWidget(self.btn_emerald)
         bottom.addStretch()
         bottom.addWidget(self.lbl_score2)
 
@@ -729,11 +767,19 @@ class GameScreen(QWidget):
         layout.addLayout(bottom)
         self._apply_styles()
 
+    # Menú original de pausa
     def _create_pause_panel(self):
         self.pause_panel = QLabel(self.canvas)
         self.pause_panel.setObjectName("pausePanel")
         self.pause_panel.setScaledContents(True)
         self.pause_panel.hide()
+
+        # Muestra solo la esmeralda cuando el menú está cerrado
+        self.btn_emerald = QPushButton(self.canvas)
+        self.btn_emerald.setObjectName("emeraldButton")
+        self.btn_emerald.setCursor(Qt.PointingHandCursor)
+        if not self.canvas.asset_emerald.isNull():
+            self.btn_emerald.setIcon(QIcon(self.canvas.asset_emerald))
 
         self.btn_pause = QPushButton(self.pause_panel)
         self.btn_reset = QPushButton(self.pause_panel)
@@ -746,73 +792,109 @@ class GameScreen(QWidget):
         self.lbl_menu_red = QLabel("0", self.pause_panel)
         for label in (self.lbl_menu_blue, self.lbl_menu_red):
             label.setObjectName("menuCount")
-            label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+            label.setAlignment(Qt.AlignCenter)
 
+    # Conecta la esmeralda y los botones del panel
     def _connect_signals(self):
         self._gm.tick.connect(self._on_tick)
         self._gm.score_changed.connect(self._on_score_changed)
         self.btn_emerald.clicked.connect(self._open_pause_menu)
-        self.btn_reset.clicked.connect(self._restart_level)
         self.btn_pause.clicked.connect(self._close_pause_menu)
+        self.btn_reset.clicked.connect(self._restart_level)
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
         self._place_pause_panel()
 
+    # Coloca el panel y la esmeralda inferior
     def _place_pause_panel(self):
         if not hasattr(self, "pause_panel"):
             return
-        ratio_w, ratio_h = 620, 632
-        max_w = min(480, max(310, self.canvas.width() - 80))
-        width = max_w
+        ratio_w, ratio_h = 418, 388
+        width = min(545, max(400, int(self.canvas.width() * 0.425)))
         height = int(width * ratio_h / ratio_w)
-        if height > self.canvas.height() - 40:
-            height = self.canvas.height() - 40
+        if height > self.canvas.height() - 36:
+            height = self.canvas.height() - 36
             width = int(height * ratio_w / ratio_h)
+
+        # Coloca la esmeralda original sin mostrar el panel oculto
+        gem_size = max(82, min(96, int(self.canvas.height() * 0.125)))
+        gem_x = (self.canvas.width() - gem_size) // 2
+        gem_y = self.canvas.height() - gem_size + 12
+        self.btn_emerald.setGeometry(gem_x, gem_y, gem_size, gem_size)
+        self.btn_emerald.setIconSize(QSize(gem_size - 8, gem_size - 8))
+
+        if not self.menu_open:
+            self.pause_panel.hide()
+            self.btn_emerald.show()
+            self.btn_emerald.raise_()
+            return
+
+        self.btn_emerald.hide()
+        self.pause_panel.show()
         x = (self.canvas.width() - width) // 2
-        y = max(6, self.canvas.height() - height + 8)
+        y = (self.canvas.height() - height) // 2
         self.pause_panel.setGeometry(x, y, width, height)
         if not self.canvas.asset_pause_menu.isNull():
-            self.pause_panel.setPixmap(self.canvas.asset_pause_menu.scaled(width, height, Qt.IgnoreAspectRatio, Qt.SmoothTransformation))
+            picture = self.canvas.asset_pause_menu.scaled(width, height, Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
+            self.pause_panel.setPixmap(picture)
 
-        self.btn_pause.setGeometry(int(width * 0.19), int(height * 0.20), int(width * 0.62), int(height * 0.12))
-        self.btn_reset.setGeometry(int(width * 0.15), int(height * 0.35), int(width * 0.70), int(height * 0.12))
-        self.btn_menu.setGeometry(int(width * 0.18), int(height * 0.77), int(width * 0.64), int(height * 0.12))
+        # Activa los botones colocados sobre el dibujo original
+        self.btn_pause.setGeometry(int(width * 0.39), int(height * 0.00), int(width * 0.22), int(height * 0.16))
+        self.btn_reset.setGeometry(int(width * 0.18), int(height * 0.23), int(width * 0.64), int(height * 0.13))
+        self.btn_menu.setGeometry(int(width * 0.20), int(height * 0.70), int(width * 0.60), int(height * 0.14))
 
-        count_w = int(width * 0.065)
-        count_h = int(height * 0.075)
-        self.lbl_menu_blue.setGeometry(int(width * 0.56), int(height * 0.505), count_w, count_h)
-        self.lbl_menu_red.setGeometry(int(width * 0.56), int(height * 0.612), count_w, count_h)
+        count_w = int(width * 0.12)
+        count_h = int(height * 0.083)
+        self.lbl_menu_blue.setGeometry(int(width * 0.55), int(height * 0.421), count_w, count_h)
+        self.lbl_menu_red.setGeometry(int(width * 0.55), int(height * 0.512), count_w, count_h)
+        count_font = QFont("Times New Roman", max(16, width // 19), QFont.Bold)
+        self.lbl_menu_blue.setFont(count_font)
+        self.lbl_menu_red.setFont(count_font)
+        self.pause_panel.raise_()
 
-        font = QFont("Times New Roman", max(14, width // 20), QFont.Bold)
-        self.lbl_menu_blue.setFont(font)
-        self.lbl_menu_red.setFont(font)
+    def _toggle_pause_menu(self):
+        if self.menu_open:
+            self._close_pause_menu()
+        else:
+            self._open_pause_menu()
 
     def _open_pause_menu(self):
-        if not self._gm.is_running:
+        if not self._gm.is_running or not self.canvas.timer.isActive():
             return
+        self.menu_open = True
         self._gm.pause()
         self.canvas.stop()
+        self._audio.pause_music()
         self._place_pause_panel()
-        self.pause_panel.show()
-        self.pause_panel.raise_()
-        self.btn_emerald.hide()
 
     def _close_pause_menu(self):
-        self.pause_panel.hide()
-        self.btn_emerald.show()
+        if not self.menu_open:
+            return
+        self.menu_open = False
+        self._place_pause_panel()
         if self._gm.is_running:
             self._gm.resume()
+            self._audio.resume_music()
             self.canvas.start()
+            self.canvas.setFocus()
+
+    def _reset_menu_position(self):
+        self.menu_open = False
+        self._place_pause_panel()
+
+    # Define si la partida se usa para probar niveles
+    def set_local_test_mode(self, enabled: bool):
+        self.canvas.set_local_test_mode(enabled)
 
     def set_level(self, level_number: int):
         self.current_level = max(1, min(4, int(level_number)))
         self.canvas.set_level(self.current_level)
         self.lbl_level.setText(f"Nivel {self.current_level}")
+        self._reset_menu_position()
 
     def reset(self):
-        self.pause_panel.hide()
-        self.btn_emerald.show()
+        self._reset_menu_position()
         self.lbl_player1.setText(f"{self._gm.name1} ({self._gm.player1})")
         self.lbl_player2.setText(f"{self._gm.name2} ({self._gm.player2})")
         self.lbl_level.setText(f"Nivel {self.current_level}")
@@ -824,24 +906,21 @@ class GameScreen(QWidget):
         self.canvas.set_level(self.current_level)
 
     def _restart_level(self):
-        self.pause_panel.hide()
-        self.btn_emerald.show()
         self._gm.start()
         self.reset()
+        self._audio.resume_music()
         self.canvas.start()
 
     def start_level(self):
-        self.pause_panel.hide()
-        self.btn_emerald.show()
+        self._reset_menu_position()
         self.canvas.start()
 
     def stop_level(self):
-        self.pause_panel.hide()
+        self._reset_menu_position()
         self.canvas.stop()
 
     def show_game_over(self, score1: int, score2: int, winner: str):
-        self.pause_panel.hide()
-        self.btn_emerald.show()
+        self._reset_menu_position()
         message = QMessageBox(self)
         message.setWindowTitle("Nivel terminado")
         message.setText(
@@ -856,6 +935,7 @@ class GameScreen(QWidget):
         self.lbl_timer.setText(f"Tiempo: {seconds}s")
         self.lbl_timer.setStyleSheet("color:#ff6767;font-weight:bold;" if seconds <= 10 else "color:#f6dfb4;")
 
+    # Actualiza puntos en pantalla y en el panel
     def _on_score_changed(self, score1: int, score2: int):
         self.lbl_score1.setText(f"{self._gm.name1}: {score1}")
         self.lbl_score2.setText(f"{self._gm.name2}: {score2}")
@@ -867,18 +947,20 @@ class GameScreen(QWidget):
     def _apply_styles(self):
         self.setStyleSheet("""
             QWidget { background-color:#141414; color:#f6dfb4; }
-            #emeraldButton {
-                background-color:transparent; border:none; padding:0px;
-            }
-            #emeraldButton:hover { background-color:transparent; }
             #pausePanel { background-color:transparent; }
+            #emeraldButton {
+                background-color:transparent;
+                border:none;
+                padding:0px;
+            }
             #menuHitBox {
                 background-color:rgba(0, 0, 0, 0);
                 border:none;
             }
             #menuCount {
-                background-color:#636462;
-                color:#f0cf32;
+                background-color:#977b45;
+                color:#efd438;
+                border:none;
                 font-weight:bold;
             }
         """)
