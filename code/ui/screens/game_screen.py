@@ -1,3 +1,4 @@
+# Importa y organiza las herramientas necesarias
 from pathlib import Path
 import math
 import random
@@ -31,12 +32,12 @@ class GameCanvas(QWidget):
     PLAYER_W = 36.0
     PLAYER_H = 56.0
 
+    # Inicializa los datos necesarios
     def __init__(self, game_mgr: GameManager, audio: AudioManager, network: NetworkManager = None, parent=None):
         super().__init__(parent)
         self._gm = game_mgr
         self._audio = audio
         self._network = network
-        self.local_test_mode = False
         self.remote_keys = set()
         if self._network is not None:
             self._network.remote_input_received.connect(self._on_remote_input)
@@ -58,9 +59,11 @@ class GameCanvas(QWidget):
         self._load_assets()
         self.reset_level()
 
+    # Recibe controles del otro jugador
     def _on_remote_input(self, keys):
         self.remote_keys = set(keys)
 
+    # Convierte teclas a nombres para la red
     @staticmethod
     def _key_names(keys):
         table = {
@@ -70,6 +73,7 @@ class GameCanvas(QWidget):
         }
         return {name for key, name in table.items() if key in keys}
 
+    # Recorta partes transparentes de una imagen
     def _trim(self, pixmap: QPixmap) -> QPixmap:
         if pixmap.isNull():
             return pixmap
@@ -84,6 +88,7 @@ class GameCanvas(QWidget):
             return pixmap
         return QPixmap.fromImage(img.copy(left, top, right - left + 1, bottom - top + 1))
 
+    # Carga los cuadros de animación
     def _load_frames(self, folder: Path):
         frames = []
         if folder.exists():
@@ -94,6 +99,7 @@ class GameCanvas(QWidget):
                     frames.append(pixmap)
         return frames
 
+    # Carga un recurso visual
     def _asset(self, name: str) -> QPixmap:
         return self._trim(QPixmap(str(Path(ELEMENTS_DIR) / name)))
 
@@ -129,6 +135,7 @@ class GameCanvas(QWidget):
         emerald_dir = Path(ORIGINAL_DIR) / "buttons" / "DefineButton2_665"
         self.asset_emerald = self._trim(QPixmap(str(emerald_dir / "1_up.png")))
 
+    # Cambia el nivel actual
     def set_level(self, level_number: int):
         self.level_number = max(1, min(4, int(level_number)))
         self.reset_level()
@@ -157,25 +164,30 @@ class GameCanvas(QWidget):
         self._static_dirty = True
         self.update()
 
+    # Inicia la actualización del juego
     def start(self):
         self.setFocus()
         if not self.timer.isActive():
             self.timer.start()
 
+    # Detiene la actualización del juego
     def stop(self):
         self.timer.stop()
         self.keys.clear()
 
+    # Registra una tecla presionada
     def keyPressEvent(self, event):
         if not event.isAutoRepeat():
             self.keys.add(event.key())
         super().keyPressEvent(event)
 
+    # Registra una tecla liberada
     def keyReleaseEvent(self, event):
         if not event.isAutoRepeat():
             self.keys.discard(event.key())
         super().keyReleaseEvent(event)
 
+    # Detecta clics dentro del juego
     def mousePressEvent(self, event):
         if self.sound_button_rect.contains(event.position()):
             self._audio.toggle_audio()
@@ -183,18 +195,22 @@ class GameCanvas(QWidget):
             return
         super().mousePressEvent(event)
 
+    # Ajusta elementos al cambiar tamaño
     def resizeEvent(self, event):
         self._static_dirty = True
         self._pixmap_cache.clear()
         super().resizeEvent(event)
 
+    # Calcula la escala visible del mapa
     def _scale(self):
         return self.width() / self.WORLD_W, self.height() / self.WORLD_H
 
+    # Transforma una posición del mapa a pantalla
     def _r(self, rect):
         sx, sy = self._scale()
         return QRectF(rect.x() * sx, rect.y() * sy, rect.width() * sx, rect.height() * sy)
 
+    # Detecta mecanismos activados
     def _active_targets(self):
         active = set()
         for switch in self.switches:
@@ -210,6 +226,7 @@ class GameCanvas(QWidget):
                 active.add(lever.target)
         return active
 
+    # Calcula la posición de un mecanismo móvil
     def _mover_rect(self, mover):
         t = max(0.0, min(1.0, mover.progress))
         return R(
@@ -218,9 +235,11 @@ class GameCanvas(QWidget):
             mover.rect.width(), mover.rect.height(),
         )
 
+    # Obtiene plataformas móviles sólidas
     def _solid_movers(self):
         return [self._mover_rect(mover) for mover in self.movers]
 
+    # Obtiene superficies con colisión
     def _solids(self):
         return self.platforms + self._solid_movers() + [box.rect for box in self.boxes]
 
@@ -247,24 +266,9 @@ class GameCanvas(QWidget):
         self._update_particles()
         self.update()
 
-    # Activa o desactiva la prueba local
-    def set_local_test_mode(self, enabled: bool):
-        self.local_test_mode = bool(enabled)
-        self.keys.clear()
-        self.remote_keys.clear()
-
-    # Aplica controles de red o de prueba local
+    # Aplica controles enviados por cada jugador conectado
     def _input(self):
         local_keys = self._key_names(self.keys)
-        if self.local_test_mode:
-            self.fire.vx = (-self.MOVE if "A" in local_keys else 0) + (self.MOVE if "D" in local_keys else 0)
-            self.water.vx = (-self.MOVE if "LEFT" in local_keys else 0) + (self.MOVE if "RIGHT" in local_keys else 0)
-            self._face_player(self.fire)
-            self._face_player(self.water)
-            self._jump(self.fire, "W" in local_keys, "jump_fire")
-            self._jump(self.water, "UP" in local_keys, "jump_water")
-            return
-
         if self._network is None or not self._network.is_connected():
             self.fire.vx = 0
             self.water.vx = 0
@@ -275,10 +279,12 @@ class GameCanvas(QWidget):
             host_keys, guest_keys = local_keys, remote_keys
         else:
             host_keys, guest_keys = remote_keys, local_keys
+
         controls = {self._gm.player1: host_keys, self._gm.player2: guest_keys}
         self._control_online_player(self.fire, controls.get("Fireboy", set()))
         self._control_online_player(self.water, controls.get("Watergirl", set()))
 
+    # Controla el personaje asignado al jugador
     def _control_online_player(self, player, keys):
         left = "A" in keys or "LEFT" in keys
         right = "D" in keys or "RIGHT" in keys
@@ -288,11 +294,13 @@ class GameCanvas(QWidget):
         sound = "jump_fire" if player.kind == "fire" else "jump_water"
         self._jump(player, jump, sound)
 
+    # Gira el personaje hacia su movimiento
     @staticmethod
     def _face_player(player):
         if player.vx:
             player.facing = 1 if player.vx > 0 else -1
 
+    # Hace saltar al personaje
     def _jump(self, player, pressed, sound):
         if pressed and player.on_ground:
             player.vy = self.JUMP
@@ -324,6 +332,7 @@ class GameCanvas(QWidget):
                     player.x += dx
                     player.y += dy
 
+    # Actualiza cajas móviles
     def _update_boxes(self):
         solids = self.platforms + self._solid_movers()
         for box in self.boxes:
@@ -334,6 +343,7 @@ class GameCanvas(QWidget):
                     box.rect.moveBottom(solid.top())
                     box.vy = 0
 
+    # Permite empujar cajas
     def _push_boxes(self, player):
         if abs(player.vx) < 0.1:
             return
@@ -346,6 +356,7 @@ class GameCanvas(QWidget):
                     box.rect = old
                     player.x = box.rect.left() - player.w if player.vx > 0 else box.rect.right()
 
+    # Actualiza movimiento y colisiones
     def _update_player(self, player):
         if player.cooldown > 0:
             player.cooldown -= 1
@@ -374,6 +385,7 @@ class GameCanvas(QWidget):
         if player.y > self.WORLD_H + 60:
             player.respawn()
 
+    # Activa palancas cercanas
     def _activate_levers(self):
         pressed = bool({"E", "DOWN", "ENTER"} & (self._key_names(self.keys) | self.remote_keys))
         if pressed and not self._last_lever:
@@ -399,9 +411,11 @@ class GameCanvas(QWidget):
                 self._gm.add_point(self._player_number("Watergirl"), 10)
                 self._audio.play_effect("diamond")
 
+    # Ubica al jugador dueño del personaje
     def _player_number(self, character):
         return 1 if self._gm.player1 == character else 2
 
+    # Detecta líquidos peligrosos
     def _check_hazards(self):
         for hazard in self.hazards:
             if self.fire.rect.intersects(hazard.rect) and hazard.kind in ("water", "poison"):
@@ -413,6 +427,7 @@ class GameCanvas(QWidget):
                 self.water.respawn()
                 self._audio.play_effect("over")
 
+    # Teletransporta mediante portales
     def _check_portals(self):
         for player in (self.fire, self.water):
             if player.cooldown > 0:
@@ -436,6 +451,7 @@ class GameCanvas(QWidget):
         if self.fire.rect.intersects(fire_zone) and self.water.rect.intersects(water_zone):
             self._gm.complete_level()
 
+    # Actualiza partículas visuales
     def _update_particles(self):
         if self.frame % 7 == 0:
             self._add_particle(self.fire.x + self.fire.w / 2, self.fire.y + self.fire.h - 5, QColor("#ff6d17"), True)
@@ -451,6 +467,7 @@ class GameCanvas(QWidget):
                 alive.append(particle)
         self.particles = alive[-36:]
 
+    # Agrega una partícula
     def _add_particle(self, x, y, color, rising):
         self.particles.append(Particle(
             x + random.uniform(-4, 4), y + random.uniform(-2, 2), random.uniform(-0.5, 0.5),
@@ -458,18 +475,21 @@ class GameCanvas(QWidget):
             random.randint(10, 18), color, random.uniform(2.2, 4.2),
         ))
 
+    # Crea un efecto de partículas
     def _burst(self, center, color):
         for _ in range(7):
             angle = random.random() * math.tau
             speed = random.uniform(1.0, 3.2)
             self.particles.append(Particle(center.x(), center.y(), math.cos(angle) * speed, math.sin(angle) * speed, random.randint(12, 22), color, random.uniform(2.5, 5.0)))
 
+    # Escala y guarda una imagen
     def _scaled_asset(self, key, pixmap, width, height):
         cache_key = (key, int(width), int(height))
         if cache_key not in self._pixmap_cache:
             self._pixmap_cache[cache_key] = pixmap.scaled(int(width), int(height), Qt.IgnoreAspectRatio, Qt.FastTransformation)
         return self._pixmap_cache[cache_key]
 
+    # Dibuja elementos que no cambian
     def _rebuild_static_layer(self):
         if self.width() <= 0 or self.height() <= 0:
             return
@@ -513,6 +533,7 @@ class GameCanvas(QWidget):
         self._draw_sound(painter)
         self._draw_help(painter)
 
+    # Dibuja el fondo del nivel
     def _draw_background(self, painter):
         texture = self.texture_jungle if self.data.theme == "jungle" else self.texture_temple
         painter.fillRect(self.rect(), QColor("#101a12" if self.data.theme == "jungle" else "#1c1615"))
@@ -523,6 +544,7 @@ class GameCanvas(QWidget):
             painter.restore()
         painter.fillRect(self.rect(), QColor(8, 13, 10, 42))
 
+    # Dibuja una plataforma
     def _draw_platform(self, painter, rect):
         visible = self._r(rect)
         if visible.height() > visible.width() * 2:
@@ -539,6 +561,7 @@ class GameCanvas(QWidget):
         painter.drawTiledPixmap(visible, tile)
         painter.restore()
 
+    # Dibuja una barrera vertical
     def _draw_vertical_barrier(self, painter, visible, key):
         if self.asset_platform.isNull():
             painter.fillRect(visible, QColor("#775335"))
@@ -552,6 +575,7 @@ class GameCanvas(QWidget):
         painter.drawTiledPixmap(visible, tile)
         painter.restore()
 
+    # Dibuja una plataforma móvil
     def _draw_mover(self, painter, mover):
         visible = self._r(self._mover_rect(mover))
         vertical = visible.height() > visible.width() * 1.4
@@ -566,6 +590,7 @@ class GameCanvas(QWidget):
         painter.setPen(QPen(QColor(border), 3))
         painter.drawRoundedRect(visible, 4, 4)
 
+    # Dibuja un líquido peligroso
     def _draw_hazard(self, painter, hazard):
         visible = self._r(hazard.rect)
         if hazard.kind == "fire" and not self.asset_lava.isNull():
@@ -579,6 +604,7 @@ class GameCanvas(QWidget):
             painter.setPen(QPen(QColor("#9dff6a"), 2))
             painter.drawLine(visible.left() + 5, visible.top() + 4, visible.right() - 5, visible.top() + 4)
 
+    # Dibuja una placa
     def _draw_switch(self, painter, switch):
         visible = self._r(switch.rect)
         if not self.asset_switch.isNull():
@@ -589,6 +615,7 @@ class GameCanvas(QWidget):
             painter.setPen(QPen(QColor("#fbff99"), 3))
             painter.drawRoundedRect(visible, 4, 4)
 
+    # Dibuja una palanca
     def _draw_lever(self, painter, lever):
         visible = self._r(lever.rect)
         base = QRectF(visible.x(), visible.bottom() - visible.height() * .45, visible.width(), visible.height() * .45)
@@ -608,6 +635,7 @@ class GameCanvas(QWidget):
             painter.setPen(QPen(QColor("#ffe044"), 6))
             painter.drawLine(pivot, tip)
 
+    # Dibuja un portal
     def _draw_portal(self, painter, portal):
         visible = self._r(portal.rect)
         color = {"purple": "#c653ff", "green": "#57f263"}.get(portal.color, "#c653ff")
@@ -617,6 +645,7 @@ class GameCanvas(QWidget):
         painter.drawEllipse(visible)
         painter.setRenderHint(QPainter.Antialiasing, False)
 
+    # Dibuja una caja
     def _draw_box(self, painter, rect):
         visible = self._r(rect)
         if not self.asset_box.isNull():
@@ -624,10 +653,12 @@ class GameCanvas(QWidget):
         else:
             painter.fillRect(visible, QColor("#e5dfbe"))
 
+    # Dibuja las puertas finales
     def _draw_doors(self, painter):
         self._draw_door(painter, self.data.fire_door, self.fire_door_asset, QColor("#ff421f"))
         self._draw_door(painter, self.data.water_door, self.water_door_asset, QColor("#27d6ff"))
 
+    # Dibuja una puerta
     def _draw_door(self, painter, rect, asset, fallback):
         visible = self._r(rect)
         if not asset.isNull():
@@ -637,6 +668,7 @@ class GameCanvas(QWidget):
             painter.setPen(QPen(fallback, 4))
             painter.drawRoundedRect(visible, 6, 6)
 
+    # Dibuja un diamante
     def _draw_diamond(self, painter, diamond):
         visible = self._r(diamond.rect)
         asset = self.asset_diamond_red if diamond.owner == "fire" else self.asset_diamond_blue
@@ -675,6 +707,7 @@ class GameCanvas(QWidget):
         )
         painter.drawPixmap(target.toRect(), sprite)
 
+    # Dibuja partículas
     def _draw_particles(self, painter):
         painter.setPen(Qt.NoPen)
         sx, sy = self._scale()
@@ -684,6 +717,7 @@ class GameCanvas(QWidget):
             painter.setBrush(color)
             painter.drawEllipse(QPointF(particle.x * sx, particle.y * sy), particle.size * sx, particle.size * sy)
 
+    # Dibuja el temporizador
     def _draw_timer(self, painter):
         width, height = 152, 54
         x = (self.width() - width) / 2
@@ -696,6 +730,7 @@ class GameCanvas(QWidget):
         painter.setPen(QColor("#ffd42d"))
         painter.drawText(QRectF(x, 5, width, height), Qt.AlignCenter, text)
 
+    # Dibuja el botón de sonido
     def _draw_sound(self, painter):
         self.sound_button_rect = QRectF(self.width() - 64, 12, 48, 48)
         visible = self.sound_button_rect
@@ -709,20 +744,18 @@ class GameCanvas(QWidget):
             painter.setPen(QPen(QColor("#ee3c37"), 5))
             painter.drawLine(visible.left() + 5, visible.top() + 5, visible.right() - 5, visible.bottom() - 5)
 
-    # Muestra los controles de la partida
+    # Muestra los controles del jugador conectado
     def _draw_help(self, painter):
         painter.setPen(QColor("#ffe36c"))
         painter.setFont(QFont("Arial", 10, QFont.Bold))
-        if self.local_test_mode:
-            text = f"Nivel {self.level_number} | Fireboy: A/D/W | Watergirl: flechas"
-        else:
-            character = self._network.local_character if self._network is not None else ""
-            text = f"Nivel {self.level_number} | Tu personaje: {character or '-'} | Mover: A/D o flechas | Saltar: W o arriba"
+        character = self._network.local_character if self._network is not None else ""
+        text = f"Nivel {self.level_number} | Tu personaje: {character or '-'} | Mover: A/D o flechas | Saltar: W o arriba | Palanca: E o Enter"
         painter.drawText(12, self.height() - 12, text)
 
 
 # Presenta la partida y el menú de pausa
 class GameScreen(QWidget):
+    # Inicializa los datos necesarios
     def __init__(self, game_mgr: GameManager, audio: AudioManager, network: NetworkManager = None):
         super().__init__()
         self._gm = game_mgr
@@ -733,6 +766,7 @@ class GameScreen(QWidget):
         self._build_ui()
         self._connect_signals()
 
+    # Construye los elementos visuales
     def _build_ui(self):
         layout = QVBoxLayout(self)
         layout.setSpacing(5)
@@ -798,10 +832,11 @@ class GameScreen(QWidget):
     def _connect_signals(self):
         self._gm.tick.connect(self._on_tick)
         self._gm.score_changed.connect(self._on_score_changed)
-        self.btn_emerald.clicked.connect(self._open_pause_menu)
-        self.btn_pause.clicked.connect(self._close_pause_menu)
-        self.btn_reset.clicked.connect(self._restart_level)
+        self.btn_emerald.clicked.connect(lambda: self._open_pause_menu(True))
+        self.btn_pause.clicked.connect(lambda: self._close_pause_menu(True))
+        self.btn_reset.clicked.connect(lambda: self._restart_level(True))
 
+    # Ajusta elementos al cambiar tamaño
     def resizeEvent(self, event):
         super().resizeEvent(event)
         self._place_pause_panel()
@@ -853,13 +888,15 @@ class GameScreen(QWidget):
         self.lbl_menu_red.setFont(count_font)
         self.pause_panel.raise_()
 
+    # Abre o cierra el menú de pausa
     def _toggle_pause_menu(self):
         if self.menu_open:
             self._close_pause_menu()
         else:
             self._open_pause_menu()
 
-    def _open_pause_menu(self):
+    # Abre el menú de pausa en ambos equipos
+    def _open_pause_menu(self, notify_remote: bool = True):
         if not self._gm.is_running or not self.canvas.timer.isActive():
             return
         self.menu_open = True
@@ -867,8 +904,11 @@ class GameScreen(QWidget):
         self.canvas.stop()
         self._audio.pause_music()
         self._place_pause_panel()
+        if notify_remote and self._network is not None:
+            self._network.send_game_action("pause")
 
-    def _close_pause_menu(self):
+    # Cierra el menú de pausa en ambos equipos
+    def _close_pause_menu(self, notify_remote: bool = True):
         if not self.menu_open:
             return
         self.menu_open = False
@@ -878,21 +918,22 @@ class GameScreen(QWidget):
             self._audio.resume_music()
             self.canvas.start()
             self.canvas.setFocus()
+        if notify_remote and self._network is not None:
+            self._network.send_game_action("resume")
 
+    # Restablece la esmeralda
     def _reset_menu_position(self):
         self.menu_open = False
         self._place_pause_panel()
 
-    # Define si la partida se usa para probar niveles
-    def set_local_test_mode(self, enabled: bool):
-        self.canvas.set_local_test_mode(enabled)
-
+    # Cambia el nivel actual
     def set_level(self, level_number: int):
         self.current_level = max(1, min(4, int(level_number)))
         self.canvas.set_level(self.current_level)
         self.lbl_level.setText(f"Nivel {self.current_level}")
         self._reset_menu_position()
 
+    # Limpia la pantalla
     def reset(self):
         self._reset_menu_position()
         self.lbl_player1.setText(f"{self._gm.name1} ({self._gm.player1})")
@@ -905,20 +946,35 @@ class GameScreen(QWidget):
         self.lbl_timer.setText(f"Tiempo: {GAME_DURATION_SECONDS}s")
         self.canvas.set_level(self.current_level)
 
-    def _restart_level(self):
+    # Reinicia el nivel actual en ambos equipos
+    def _restart_level(self, notify_remote: bool = True):
         self._gm.start()
         self.reset()
         self._audio.resume_music()
         self.canvas.start()
+        if notify_remote and self._network is not None:
+            self._network.send_game_action("restart")
 
+    # Ejecuta una acción recibida por la red
+    def apply_remote_action(self, action: str):
+        if action == "pause":
+            self._open_pause_menu(False)
+        elif action == "resume":
+            self._close_pause_menu(False)
+        elif action == "restart":
+            self._restart_level(False)
+
+    # Comienza el nivel
     def start_level(self):
         self._reset_menu_position()
         self.canvas.start()
 
+    # Detiene el nivel
     def stop_level(self):
         self._reset_menu_position()
         self.canvas.stop()
 
+    # Muestra el resultado
     def show_game_over(self, score1: int, score2: int, winner: str):
         self._reset_menu_position()
         message = QMessageBox(self)
@@ -931,6 +987,7 @@ class GameScreen(QWidget):
         )
         message.exec()
 
+    # Actualiza el tiempo
     def _on_tick(self, seconds: int):
         self.lbl_timer.setText(f"Tiempo: {seconds}s")
         self.lbl_timer.setStyleSheet("color:#ff6767;font-weight:bold;" if seconds <= 10 else "color:#f6dfb4;")
@@ -944,6 +1001,7 @@ class GameScreen(QWidget):
         self.lbl_menu_blue.setText(str(water_score // 10))
         self.lbl_menu_red.setText(str(fire_score // 10))
 
+    # Aplica colores y estilos
     def _apply_styles(self):
         self.setStyleSheet("""
             QWidget { background-color:#141414; color:#f6dfb4; }
@@ -964,3 +1022,4 @@ class GameScreen(QWidget):
                 font-weight:bold;
             }
         """)
+
