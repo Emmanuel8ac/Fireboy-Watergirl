@@ -3,11 +3,13 @@ from config import MAX_SCORES_SAVED, SCORES_FILE
 from models.score import Score
 
 
+# Guarda el historial individual de puntajes
 class ScoreManager:
     def __init__(self):
         self._scores = []
         self._load()
 
+    # Lee los puntajes guardados
     def _load(self):
         try:
             with open(SCORES_FILE, "r", encoding="utf-8") as file:
@@ -16,6 +18,7 @@ class ScoreManager:
         except (FileNotFoundError, json.JSONDecodeError):
             self._scores = []
 
+    # Guarda los puntajes en el archivo JSON
     def _save(self):
         try:
             with open(SCORES_FILE, "w", encoding="utf-8") as file:
@@ -23,6 +26,7 @@ class ScoreManager:
         except OSError as error:
             print(f"No se pudo guardar el historial: {error}")
 
+    # Registra el resultado de un jugador
     def add_score(self, player_name: str, character: str, score: int, duration: int):
         result = Score.create(player_name, character, score, duration).to_dict()
         self._scores.append(result)
