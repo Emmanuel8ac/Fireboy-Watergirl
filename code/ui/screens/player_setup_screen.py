@@ -1,3 +1,4 @@
+# Importa y organiza las herramientas necesarias
 from pathlib import Path
 
 from PySide6.QtCore import Qt, Signal
@@ -12,6 +13,7 @@ class PlayerSetupScreen(QWidget):
     selection_changed = Signal(str)
     continue_requested = Signal()
 
+    # Inicializa los datos necesarios
     def __init__(self):
         super().__init__()
         self.is_host = False
@@ -23,6 +25,7 @@ class PlayerSetupScreen(QWidget):
         self._build_ui()
         self.configure_online(False, "Jugador")
 
+    # Construye los elementos visuales
     def _build_ui(self):
         layout = QVBoxLayout(self)
         layout.setAlignment(Qt.AlignTop)
@@ -119,6 +122,7 @@ class PlayerSetupScreen(QWidget):
         self._notice = "Esperando que ambos jugadores elijan personaje."
         self._refresh()
 
+    # Muestra el nombre remoto
     def set_remote_name(self, name: str):
         self.other_name = name.strip()
         self._refresh()
@@ -135,6 +139,7 @@ class PlayerSetupScreen(QWidget):
         self.selection_changed.emit(self.my_character or "")
         self._refresh()
 
+    # Recibe la selección remota
     def set_remote_character(self, character: str, name: str = "") -> bool:
         if name:
             self.other_name = name
@@ -156,11 +161,13 @@ class PlayerSetupScreen(QWidget):
         self._refresh()
         return False
 
+    # Devuelve personajes por jugador
     def chosen_players(self):
         if self.is_host:
             return self.my_character, self.other_character
         return self.other_character, self.my_character
 
+    # Indica quién eligió personaje
     def _owner_text(self, character: str) -> str:
         if character == self.my_character:
             return f"Elegido por: {self.my_name}"
@@ -168,6 +175,7 @@ class PlayerSetupScreen(QWidget):
             return f"Elegido por: {self.other_name or 'otro jugador'}"
         return ""
 
+    # Actualiza la selección visible
     def _refresh(self):
         remote = self.other_name or "Otro jugador"
         self.lbl_selected.setText(f"{self.my_name}: {self.my_character or '-'}    {remote}: {self.other_character or '-'}")
@@ -182,6 +190,7 @@ class PlayerSetupScreen(QWidget):
         self.fire_button.setEnabled(self.other_character != "Fireboy" or self.my_character == "Fireboy")
         self.water_button.setEnabled(self.other_character != "Watergirl" or self.my_character == "Watergirl")
 
+    # Aplica colores y estilos
     def _apply_styles(self):
         self.setStyleSheet("""
             QWidget { background-color: #2b1b12; color: #f6dfb4; }
