@@ -1,3 +1,4 @@
+# Importa y organiza las herramientas necesarias
 from pathlib import Path
 from PySide6.QtCore import QRectF
 
