@@ -2,12 +2,15 @@ from PySide6.QtCore import QObject, QTimer, Signal
 from config import GAME_DURATION_SECONDS
 
 
+# Controla el tiempo y los puntos de la partida
 class GameManager(QObject):
+    # Señales usadas por las pantallas
     tick = Signal(int)
     score_changed = Signal(int, int)
     game_over = Signal(int, int)
     level_completed = Signal(int, int)
 
+    # Datos iniciales de la partida
     def __init__(self, parent=None):
         super().__init__(parent)
         self._player1 = "Fireboy"
@@ -23,12 +26,14 @@ class GameManager(QObject):
         self._timer.setInterval(1000)
         self._timer.timeout.connect(self._on_tick)
 
+    # Asigna nombres y personajes
     def setup(self, player1: str, player2: str, name1: str = "Jugador 1", name2: str = "Jugador 2"):
         self._player1 = player1 or "Fireboy"
         self._player2 = player2 or "Watergirl"
         self._name1 = name1 or "Jugador 1"
         self._name2 = name2 or "Jugador 2"
 
+    # Inicia el nivel
     def start(self):
         self._score1 = 0
         self._score2 = 0
@@ -38,6 +43,7 @@ class GameManager(QObject):
         self.score_changed.emit(self._score1, self._score2)
         self.tick.emit(self._time_left)
 
+    # Termina la partida por tiempo
     def finish(self):
         if not self._running:
             return
@@ -45,6 +51,7 @@ class GameManager(QObject):
         self._timer.stop()
         self.game_over.emit(self._score1, self._score2)
 
+    # Termina el nivel al llegar a las puertas
     def complete_level(self):
         if not self._running:
             return
@@ -64,6 +71,7 @@ class GameManager(QObject):
         if self._running:
             self._timer.start()
 
+    # Suma puntos al jugador que recoge un diamante
     def add_point(self, player_index: int, points: int = 10):
         if not self._running:
             return
@@ -73,6 +81,7 @@ class GameManager(QObject):
             self._score2 += points
         self.score_changed.emit(self._score1, self._score2)
 
+    # Datos consultados por la interfaz
     @property
     def score1(self) -> int:
         return self._score1
@@ -109,6 +118,7 @@ class GameManager(QObject):
     def is_running(self) -> bool:
         return self._running
 
+    # Calcula el resultado final
     def winner(self) -> str:
         if self._score1 > self._score2:
             return self._name1
@@ -116,6 +126,7 @@ class GameManager(QObject):
             return self._name2
         return "Empate"
 
+    # Actualiza el reloj cada segundo
     def _on_tick(self):
         self._time_left -= 1
         self.tick.emit(self._time_left)
