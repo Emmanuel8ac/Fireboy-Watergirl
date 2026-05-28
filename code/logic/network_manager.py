@@ -23,6 +23,7 @@ class NetworkManager(QObject):
     status_changed = Signal(str)
     client_connected = Signal()
     session_ready = Signal(object)
+    remote_action_received = Signal(str)
 
     # Estado inicial de la conexión
     def __init__(self):
@@ -48,46 +49,58 @@ class NetworkManager(QObject):
     def state(self) -> str:
         return self._state
 
+    # Devuelve el código de la sala
     @property
     def room_code(self) -> str:
         return self._code
 
+    # Devuelve el último error de conexión
     @property
     def last_error(self) -> str:
         return self._last_error
 
+    # Devuelve las teclas del otro jugador
     @property
     def remote_keys(self) -> set:
         return set(self._remote_keys)
 
+    # Devuelve el personaje elegido localmente
     @property
     def local_character(self) -> str:
         return self._local_character
 
+    # Devuelve el personaje elegido en el otro equipo
     @property
     def remote_character(self) -> str:
         return self._remote_character
 
+    # Devuelve el nombre del jugador local
     @property
     def local_name(self) -> str:
         return self._local_name
 
+    # Devuelve el nombre del otro jugador
     @property
     def remote_name(self) -> str:
         return self._remote_name
 
+    # Cambia un dato del programa
     def set_local_name(self, name: str):
         self._local_name = self._clean_name(name)
 
+    # Comprueba el estado actual
     def is_host(self) -> bool:
         return self._state == "hosting"
 
+    # Comprueba el estado actual
     def is_client(self) -> bool:
         return self._state == "client"
 
+    # Comprueba el estado actual
     def is_online(self) -> bool:
         return self._state in ("hosting", "client")
 
+    # Comprueba el estado actual
     def is_connected(self) -> bool:
         return self._connected or (self._sock is not None and self._state == "client")
 
@@ -161,10 +174,12 @@ class NetworkManager(QObject):
         if self.is_online() and self._sock is not None and self._local_name:
             self._send({"type": "player_name", "name": self._local_name})
 
+    # Envía las teclas presionadas
     def send_input(self, keys):
         if self.is_online() and self._sock is not None:
             self._send({"type": "input", "keys": sorted(list(keys))})
 
+    # Envía el personaje elegido
     def send_character_choice(self, character: str):
         if character not in ("", "Fireboy", "Watergirl"):
             return
@@ -176,6 +191,7 @@ class NetworkManager(QObject):
                 "name": self._local_name,
             })
 
+    # Envía el nivel elegido
     def send_session_setup(self, level_number: int, player1: str, player2: str):
         if not self.is_host() or not self.is_connected():
             return
@@ -187,6 +203,13 @@ class NetworkManager(QObject):
             "player1_name": self._local_name,
             "player2_name": self._remote_name,
         })
+
+    # Envía acciones del menú durante la partida
+    def send_game_action(self, action: str):
+        if action not in ("pause", "resume", "restart", "menu"):
+            return
+        if self.is_connected() and self._sock is not None:
+            self._send({"type": "game_action", "action": action})
 
     # Cierra la conexión actual
     def disconnect(self, clear_name: bool = False):
@@ -229,6 +252,7 @@ class NetworkManager(QObject):
         except OSError:
             return
 
+    # Recibe mensajes por red
     def _receive_loop(self, active_socket: socket.socket):
         buffer = ""
         while self._running:
@@ -248,6 +272,7 @@ class NetworkManager(QObject):
         self._sock = None
         self._connected = False
 
+    # Procesa un mensaje recibido
     def _read_message(self, message: dict):
         message_type = message.get("type")
         if message_type == "input":
@@ -267,7 +292,12 @@ class NetworkManager(QObject):
                 self.remote_character_selected.emit(character, self._remote_name)
         elif message_type == "session_setup":
             self.session_ready.emit(message)
+        elif message_type == "game_action":
+            action = str(message.get("action", ""))
+            if action in ("pause", "resume", "restart", "menu"):
+                self.remote_action_received.emit(action)
 
+    # Envía un mensaje por red
     def _send(self, message: dict):
         try:
             payload = (json.dumps(message, separators=(",", ":")) + "\n").encode("utf-8")
@@ -295,6 +325,7 @@ class NetworkManager(QObject):
             time.sleep(1.0)
         udp_socket.close()
 
+    # Busca una sala disponible
     def _discover_room(self, code: str, timeout: float):
         end_time = time.time() + timeout
         udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -321,11 +352,13 @@ class NetworkManager(QObject):
     def _clean_name(name: str) -> str:
         return " ".join(name.strip().split())[:18]
 
+    # Genera el código de sala
     @staticmethod
     def _generate_code() -> str:
         characters = string.ascii_uppercase + string.digits
         return "".join(random.choices(characters, k=6))
 
+    # Obtiene la dirección de red
     @staticmethod
     def _local_ip() -> str:
         active_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
