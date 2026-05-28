@@ -5,6 +5,7 @@ from models.score import Score
 
 # Guarda el historial individual de puntajes
 class ScoreManager:
+    # Inicializa los datos necesarios
     def __init__(self):
         self._scores = []
         self._load()
@@ -34,9 +35,11 @@ class ScoreManager:
         self._scores = self._scores[:MAX_SCORES_SAVED]
         self._save()
 
+    # Devuelve el historial
     def get_scores(self) -> list:
         return list(self._scores)
 
+    # Limpia los puntajes guardados
     def clear(self):
         self._scores = []
         self._save()
