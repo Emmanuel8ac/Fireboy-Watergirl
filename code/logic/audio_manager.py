@@ -42,6 +42,7 @@ FALLBACKS: Dict[str, List[str]] = {
 }
 
 
+# Controla la música y los efectos
 class AudioManager:
     # Inicio y configuración
     def __init__(self):
@@ -56,6 +57,7 @@ class AudioManager:
         self._effect_cache: Dict[str, object] = {}
         self._init_backend()
 
+    # Configura el audio mediante PySide6
     def _init_backend(self):
         try:
             from PySide6.QtCore import QUrl
@@ -74,6 +76,7 @@ class AudioManager:
         self._music_output.setVolume(self._music_vol)
         self._backend = "qt"
 
+    # Busca un efecto de sonido disponible
     def _resolve_effect(self, effect_name: str) -> str:
         path = EFFECTS.get(effect_name, "")
         if path and Path(path).is_file() and Path(path).suffix.lower() != ".flv":
@@ -94,10 +97,12 @@ class AudioManager:
             self.stop_all()
         return self._enabled
 
+    # Cambia un dato del programa
     def set_enabled(self, enabled: bool):
         if self._enabled != enabled:
             self.toggle_audio()
 
+    # Comprueba el estado actual
     def is_enabled(self) -> bool:
         return self._enabled
 
@@ -117,18 +122,22 @@ class AudioManager:
         self._music_output.setVolume(self._music_vol)
         self._music_player.play()
 
+    # Detiene la música de fondo
     def stop_music(self):
         if self._backend == "qt":
             self._music_player.stop()
 
+    # Pausa la música de fondo
     def pause_music(self):
         if self._backend == "qt":
             self._music_player.pause()
 
+    # Reanuda la música de fondo
     def resume_music(self):
         if self._enabled and self._backend == "qt":
             self._music_player.play()
 
+    # Detiene música y efectos
     def stop_all(self):
         self.stop_music()
         for player in self._effect_players:
@@ -143,9 +152,11 @@ class AudioManager:
         if self._backend == "qt":
             self._music_output.setVolume(self._music_vol if self._enabled else 0.0)
 
+    # Cambia un dato del programa
     def set_effect_volume(self, vol: float):
         self._effect_vol = max(0.0, min(1.0, float(vol)))
 
+    # Reproduce un efecto de sonido
     def play_effect(self, effect_name: str):
         path = self._resolve_effect(effect_name)
         if not self._enabled or self._backend != "qt" or not path:
@@ -157,6 +168,7 @@ class AudioManager:
         else:
             self._play_media_effect(path)
 
+    # Reproduce un efecto de formato WAV
     def _play_wav_effect(self, path: str):
         effect = self._effect_cache.get(path)
         if effect is None:
@@ -166,6 +178,7 @@ class AudioManager:
         effect.setVolume(self._effect_vol)
         effect.play()
 
+    # Reproduce un efecto de audio comprimido
     def _play_media_effect(self, path: str):
         player = self._QMediaPlayer()
         output = self._QAudioOutput()
