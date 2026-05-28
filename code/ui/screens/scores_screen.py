@@ -5,6 +5,7 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QListWidget, QListWidgetItem,
 from logic.score_manager import ScoreManager
 
 
+# Muestra el historial individual
 class ScoresScreen(QWidget):
     def __init__(self, score_mgr: ScoreManager):
         super().__init__()
@@ -40,6 +41,7 @@ class ScoresScreen(QWidget):
         self.refresh()
         self._apply_styles()
 
+    # Actualiza la lista de puntajes
     def refresh(self):
         self.list_scores.clear()
         scores = self._score_mgr.get_scores()
