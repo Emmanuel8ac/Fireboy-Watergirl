@@ -1,3 +1,4 @@
+# Importa y organiza las herramientas necesarias
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QLineEdit, QPushButton, QScrollArea, QVBoxLayout, QWidget
@@ -7,6 +8,7 @@ from logic.network_manager import NetworkManager
 
 # Pide el nombre y conecta la partida en red
 class ConnectionScreen(QWidget):
+    # Inicializa los datos necesarios
     def __init__(self, network: NetworkManager):
         super().__init__()
         self._network = network
@@ -51,7 +53,6 @@ class ConnectionScreen(QWidget):
         layout.addWidget(self.lbl_title)
         layout.addWidget(self._name_section())
         layout.addWidget(self.lbl_error)
-        layout.addWidget(self._local_test_section())
         layout.addWidget(self._create_section())
         layout.addWidget(self._join_section())
 
@@ -91,20 +92,6 @@ class ConnectionScreen(QWidget):
         box.addWidget(self.input_name)
         return frame
 
-    # Abre una prueba local de niveles
-    def _local_test_section(self) -> QFrame:
-        frame, box = self._section()
-        lbl = QLabel("Modo provisional")
-        lbl.setObjectName("sectionTitle")
-        lbl.setFont(QFont("Arial", 15, QFont.Bold))
-        text = QLabel("Controla a los dos personajes desde esta computadora para revisar los niveles.")
-        text.setObjectName("sectionText")
-        text.setWordWrap(True)
-        self.btn_local_test = QPushButton("PROBAR NIVELES EN LOCAL")
-        box.addWidget(lbl)
-        box.addWidget(text)
-        box.addWidget(self.btn_local_test, alignment=Qt.AlignCenter)
-        return frame
 
     # Permite crear una sala
     def _create_section(self) -> QFrame:
@@ -148,9 +135,11 @@ class ConnectionScreen(QWidget):
         box.addLayout(row)
         return frame
 
+    # Devuelve el nombre escrito
     def player_name(self) -> str:
         return " ".join(self.input_name.text().strip().split())
 
+    # Limpia la pantalla
     def reset(self):
         self.lbl_error.setText("")
         self.code_display.clear()
@@ -159,20 +148,24 @@ class ConnectionScreen(QWidget):
         self.btn_create.setEnabled(True)
         self.btn_create.setText("CREAR CÓDIGO")
 
+    # Muestra el código de sala
     def set_code(self, code: str):
         self.code_display.setText(code)
         self.btn_create.setEnabled(False)
         self.btn_create.setText("ESPERANDO JUGADOR")
         self.lbl_error.setText("")
 
+    # Muestra un error
     def show_error(self, message: str):
         self.lbl_error.setStyleSheet("color: #ffb0a0; font-size: 14px; font-weight: bold;")
         self.lbl_error.setText(message)
 
+    # Muestra un aviso
     def show_info(self, message: str):
         self.lbl_error.setStyleSheet("color: #d6ffd6; font-size: 14px; font-weight: bold;")
         self.lbl_error.setText(message)
 
+    # Aplica colores y estilos
     def _apply_styles(self):
         self.setStyleSheet("""
             QWidget, #page, #column, QScrollArea#scroll, QScrollArea#scroll > QWidget > QWidget {
