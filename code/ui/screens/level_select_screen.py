@@ -1,3 +1,4 @@
+# Importa y organiza las herramientas necesarias
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QGridLayout, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
@@ -7,11 +8,13 @@ from PySide6.QtWidgets import QGridLayout, QHBoxLayout, QLabel, QPushButton, QVB
 class LevelSelectScreen(QWidget):
     level_selected = Signal(int)
 
+    # Inicializa los datos necesarios
     def __init__(self):
         super().__init__()
         self.level_buttons = []
         self._build_ui()
 
+    # Construye los elementos visuales
     def _build_ui(self):
         self.setStyleSheet("""
             QWidget { background-color: #151515; color: #f7d35c; }
@@ -65,16 +68,12 @@ class LevelSelectScreen(QWidget):
         bottom.addStretch()
         main.addLayout(bottom)
 
-
-    # Prepara la selección para red o para prueba local
-    def configure_selection(self, can_choose: bool, local_test: bool = False):
+    # Habilita niveles para el creador o espera al invitado
+    def configure_selection(self, can_choose: bool):
         for button in self.level_buttons:
             button.setEnabled(can_choose)
         self.btn_back.setEnabled(can_choose)
-        if local_test:
-            self.lbl_subtitle.setText("Modo local provisional: elige un nivel para probarlo.")
-            self.btn_back.setText("REGRESAR")
-        elif can_choose:
+        if can_choose:
             self.lbl_subtitle.setText("Los personajes ya están listos. Elige el mapa para comenzar.")
             self.btn_back.setText("REGRESAR A PERSONAJES")
         else:
