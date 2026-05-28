@@ -59,14 +59,17 @@ class GameManager(QObject):
         self._timer.stop()
         self.level_completed.emit(self._score1, self._score2)
 
+    # Cancela la partida actual
     def abort(self):
         self._running = False
         self._timer.stop()
 
+    # Pausa el reloj
     def pause(self):
         if self._running:
             self._timer.stop()
 
+    # Reanuda el reloj
     def resume(self):
         if self._running:
             self._timer.start()
@@ -86,34 +89,42 @@ class GameManager(QObject):
     def score1(self) -> int:
         return self._score1
 
+    # Devuelve los puntos del segundo jugador
     @property
     def score2(self) -> int:
         return self._score2
 
+    # Devuelve el personaje del primer jugador
     @property
     def player1(self) -> str:
         return self._player1
 
+    # Devuelve el personaje del segundo jugador
     @property
     def player2(self) -> str:
         return self._player2
 
+    # Devuelve el nombre del primer jugador
     @property
     def name1(self) -> str:
         return self._name1
 
+    # Devuelve el nombre del segundo jugador
     @property
     def name2(self) -> str:
         return self._name2
 
+    # Devuelve el tiempo restante
     @property
     def time_left(self) -> int:
         return self._time_left
 
+    # Devuelve el tiempo utilizado
     @property
     def elapsed_time(self) -> int:
         return GAME_DURATION_SECONDS - self._time_left
 
+    # Comprueba el estado actual
     @property
     def is_running(self) -> bool:
         return self._running
