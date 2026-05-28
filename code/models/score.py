@@ -1,8 +1,8 @@
 from datetime import datetime
 
-
 # Resultado individual de un jugador
 class Score:
+    # Inicializa los datos necesarios
     def __init__(self, player_name: str, character: str, score: int, duration: int, date: str):
         self.player_name = player_name
         self.character = character
