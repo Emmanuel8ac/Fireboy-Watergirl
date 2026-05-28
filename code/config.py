@@ -1,17 +1,35 @@
-# config.py — Configuración global del proyecto
+"""Configuración global del proyecto."""
+from pathlib import Path
 
-WINDOW_TITLE          = "Fireboy & Watergirl"
-WINDOW_WIDTH          = 800
-WINDOW_HEIGHT         = 600
+# Rutas principales del proyecto
+BASE_DIR = Path(__file__).resolve().parent
+RESOURCES_DIR = BASE_DIR / "resources"
+IMAGES_DIR = RESOURCES_DIR / "images"
+AUDIO_DIR = RESOURCES_DIR / "audio"
+STYLES_DIR = RESOURCES_DIR / "styles"
+ORIGINAL_DIR = RESOURCES_DIR / "original"
 
-# Juego
-GAME_DURATION_SECONDS = 60      # duración de cada partida
-MAX_SCORES_SAVED      = 10      # máximo de registros guardados
+# Carpetas usadas por la interfaz y el juego
+SOUNDS_DIR = AUDIO_DIR
+UI_DIR = IMAGES_DIR / "ui"
+CHARACTERS_DIR = IMAGES_DIR / "characters"
+LEVELS_DIR = IMAGES_DIR / "levels"
+TEXTURES_DIR = IMAGES_DIR / "textures"
+ELEMENTS_DIR = IMAGES_DIR / "elements"
+SCORES_FILE = BASE_DIR / "scores.json"
 
-# Red
-DEFAULT_HOST          = "127.0.0.1"
-DEFAULT_PORT          = 5050
+# Tamaño de la ventana
+WINDOW_TITLE = "Fireboy & Watergirl"
+WINDOW_WIDTH = 1200
+WINDOW_HEIGHT = 850
 
-# Audio  (0.0 – 1.0)
-MUSIC_VOLUME          = 0.5
-EFFECT_VOLUME         = 0.8
+# Reglas de partida y conexión
+GAME_DURATION_SECONDS = 180
+MAX_SCORES_SAVED = 20
+
+DEFAULT_HOST = "127.0.0.1"
+DEFAULT_PORT = 5050
+
+# Volumen del audio
+MUSIC_VOLUME = 0.35
+EFFECT_VOLUME = 0.75
