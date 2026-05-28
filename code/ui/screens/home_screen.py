@@ -1,3 +1,4 @@
+# Importa y organiza las herramientas necesarias
 from pathlib import Path
 from PySide6.QtWidgets import QWidget, QPushButton, QVBoxLayout, QLabel, QSpacerItem, QSizePolicy
 from PySide6.QtGui import QPixmap, QIcon, QFont
@@ -7,11 +8,13 @@ from config import UI_DIR
 
 # Muestra el menú principal
 class HomeScreen(QWidget):
+    # Inicializa los datos necesarios
     def __init__(self, audio):
         super().__init__()
         self._audio = audio
         self._build_ui()
 
+    # Construye los elementos visuales
     def _build_ui(self):
         self.background_label = QLabel(self)
         bg_path = Path(UI_DIR) / "menu" / "background_menu.png"
@@ -74,11 +77,13 @@ class HomeScreen(QWidget):
             """)
         return button
 
+    # Activa o desactiva audio
     def _toggle_audio(self):
         self._audio.play_effect("click")
         self._audio.toggle_audio()
         self._update_audio_button()
 
+    # Actualiza el icono de sonido
     def _update_audio_button(self):
         path = Path(UI_DIR) / "buttons" / "btn_muter" / "1.png"
         if path.exists():
@@ -90,6 +95,7 @@ class HomeScreen(QWidget):
         else:
             self.btn_audio.setText("SONIDO" if self._audio.is_enabled() else "MUDO")
 
+    # Ajusta elementos al cambiar tamaño
     def resizeEvent(self, event):
         self.background_label.setGeometry(0, 0, self.width(), self.height())
         self.background_label.lower()
