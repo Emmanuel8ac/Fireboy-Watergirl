@@ -10,10 +10,13 @@ from PySide6.QtCore import QObject, Signal
 
 from config import DEFAULT_HOST, DEFAULT_PORT
 
+# Puerto usado para encontrar salas en la red
 DISCOVERY_PORT = DEFAULT_PORT + 1
 
 
+# Envía datos entre los dos jugadores
 class NetworkManager(QObject):
+    # Señales recibidas por las pantallas
     remote_input_received = Signal(object)
     remote_character_selected = Signal(str, str)
     remote_name_received = Signal(str)
@@ -21,6 +24,7 @@ class NetworkManager(QObject):
     client_connected = Signal()
     session_ready = Signal(object)
 
+    # Estado inicial de la conexión
     def __init__(self):
         super().__init__()
         self._state = "idle"
@@ -39,6 +43,7 @@ class NetworkManager(QObject):
         self._connected = False
         self._last_error = ""
 
+    # Datos disponibles para la interfaz
     @property
     def state(self) -> str:
         return self._state
@@ -86,6 +91,7 @@ class NetworkManager(QObject):
     def is_connected(self) -> bool:
         return self._connected or (self._sock is not None and self._state == "client")
 
+    # Crea una sala para el anfitrión
     def create_room(self) -> str:
         saved_name = self._local_name
         self.disconnect()
@@ -112,6 +118,7 @@ class NetworkManager(QObject):
         self.status_changed.emit(f"Servidor creado: {self._code}. Comparte el código con el otro jugador.")
         return self._code
 
+    # Une al invitado mediante el código
     def join_room(self, code: str, timeout: float = 7.0) -> bool:
         saved_name = self._local_name
         self.disconnect()
@@ -149,6 +156,7 @@ class NetworkManager(QObject):
             self.disconnect()
             return False
 
+    # Envía nombre, controles y selección
     def send_player_name(self):
         if self.is_online() and self._sock is not None and self._local_name:
             self._send({"type": "player_name", "name": self._local_name})
@@ -180,6 +188,7 @@ class NetworkManager(QObject):
             "player2_name": self._remote_name,
         })
 
+    # Cierra la conexión actual
     def disconnect(self, clear_name: bool = False):
         self._running = False
         self._remote_keys = set()
@@ -204,6 +213,7 @@ class NetworkManager(QObject):
         self._state = "idle"
         self._code = ""
 
+    # Escucha mensajes del otro jugador
     def _accept_loop(self):
         try:
             client, address = self._server.accept()
@@ -267,6 +277,7 @@ class NetworkManager(QObject):
         except OSError:
             self.status_changed.emit("No pude enviar los datos al otro jugador.")
 
+    # Publica y busca salas disponibles
     def _broadcast_loop(self):
         udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
@@ -305,6 +316,7 @@ class NetworkManager(QObject):
             udp_socket.close()
         return None
 
+    # Prepara nombres y códigos de sala
     @staticmethod
     def _clean_name(name: str) -> str:
         return " ".join(name.strip().split())[:18]
