@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+# Importa y organiza las herramientas necesarias
+>>>>>>> 6dfe885955969477c39273336deca677a138d5c5
 import json
 import random
 import socket
