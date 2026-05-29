@@ -25,7 +25,7 @@ class HomeScreen(QWidget):
             self.setStyleSheet("background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 #2b1b12, stop:1 #0f0b08);")
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(30, 35, 30, 25)
+        layout.setContentsMargins(30, 100, 30, 100)
         layout.setAlignment(Qt.AlignCenter)
 
         title_path = Path(UI_DIR) / "menu" / "title.png"
