@@ -1,1 +1,16 @@
-[]
+[
+  {
+    "player_name": "ali",
+    "character": "Fireboy",
+    "score": 10,
+    "duration": 49,
+    "date": "2026-05-28 22:37"
+  },
+  {
+    "player_name": "joss",
+    "character": "Watergirl",
+    "score": 10,
+    "duration": 49,
+    "date": "2026-05-28 22:37"
+  }
+]
