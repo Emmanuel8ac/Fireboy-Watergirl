@@ -57,9 +57,11 @@ class PlayerSetupScreen(QWidget):
         self.lbl_selected = QLabel("")
         self.lbl_selected.setAlignment(Qt.AlignCenter)
         self.lbl_selected.setFont(QFont("Arial", 14, QFont.Bold))
+
+        # Muestra avisos sobre la selección
         self.lbl_notice = QLabel("")
+        self.lbl_notice.setObjectName("notice")
         self.lbl_notice.setAlignment(Qt.AlignCenter)
-        self.lbl_notice.setStyleSheet("color: #ffe276; font-weight: bold;")
 
         buttons = QHBoxLayout()
         self.btn_back = QPushButton("REGRESAR")
@@ -117,8 +119,12 @@ class PlayerSetupScreen(QWidget):
         self.other_name = other_name
         self.my_character = None
         self.other_character = None
+
         role = "creador de la sala" if is_host else "jugador invitado"
-        self.lbl_instruction.setText(f"{self.my_name}, eres {role}. Cada jugador elige solo un personaje.")
+        self.lbl_instruction.setText(
+            f"{self.my_name}, eres {role}. Cada jugador elige solo un personaje."
+        )
+
         self._notice = "Esperando que ambos jugadores elijan personaje."
         self._refresh()
 
@@ -196,6 +202,7 @@ class PlayerSetupScreen(QWidget):
             QWidget { background-color: #2b1b12; color: #f6dfb4; }
             QFrame { border: 2px solid #4a2c19; background-color: #f2e3c6; color: #21160e; border-radius: 12px; padding: 12px; }
             QLabel#owner { color: #a53922; font-weight: bold; font-size: 13px; }
+            QLabel#notice { color: #000000; font-weight: bold; font-size: 13px; }
             QPushButton { background-color: #d9b38c; border: 2px solid #2f1b0e; color: #21160e; padding: 9px; border-radius: 7px; font-weight: bold; }
             QPushButton:hover { background-color: #efc58b; }
             QPushButton:disabled { background-color: #8d8173; color: #4f4a44; }
