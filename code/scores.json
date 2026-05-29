@@ -1,5 +1,33 @@
 [
   {
+    "player_name": "Emmanuel",
+    "character": "Fireboy",
+    "score": 40,
+    "duration": 180,
+    "date": "2026-05-28 23:39"
+  },
+  {
+    "player_name": "yo",
+    "character": "Watergirl",
+    "score": 40,
+    "duration": 180,
+    "date": "2026-05-28 23:39"
+  },
+  {
+    "player_name": "Emmanuel",
+    "character": "Fireboy",
+    "score": 30,
+    "duration": 76,
+    "date": "2026-05-28 23:35"
+  },
+  {
+    "player_name": "yo",
+    "character": "Watergirl",
+    "score": 30,
+    "duration": 76,
+    "date": "2026-05-28 23:35"
+  },
+  {
     "player_name": "ali",
     "character": "Fireboy",
     "score": 10,

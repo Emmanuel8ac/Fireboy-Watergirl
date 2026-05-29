@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Entornos virtuales
+venv/
+.env/
+.venv/
+
+# PyInstaller
+build/
+dist/
+*.spec
+
+# IDEs
+.idea/
+.vscode/
+
+# Logs
+*.log
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Config local
+*.sqlite3
+
+# Archivos temporales
+*.tmp
+*.temp
+
+# Cache de pytest (por si usas pruebas)
+.pytest_cache/
+
+# Archivos de coverage
+.coverage
+htmlcov/
+
+# Inno Setup (opcional)
+installer/*.exe
+
+# Otros
+*.bakgit
