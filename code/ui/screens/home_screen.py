@@ -33,7 +33,7 @@ class HomeScreen(QWidget):
         self.lbl_title.setAlignment(Qt.AlignCenter)
         if title_path.exists():
             px = QPixmap(str(title_path))
-            self.lbl_title.setPixmap(px.scaled(760, 360, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            self.lbl_title.setPixmap(px.scaled(760, 160, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         else:
             self.lbl_title.setFont(QFont("Arial", 36, QFont.Bold))
             self.lbl_title.setStyleSheet("color: #f4d9a6;")
