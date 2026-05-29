@@ -1,18 +1,14 @@
-"""Configuración global del proyecto."""
-
 from pathlib import Path
 
 # Rutas principales del proyecto
 BASE_DIR = Path(__file__).resolve().parent
 RESOURCES_DIR = BASE_DIR / "resources"
 IMAGES_DIR = RESOURCES_DIR / "images"
-AUDIO_DIR = RESOURCES_DIR / "audio"
-STYLES_DIR = RESOURCES_DIR / "styles"
-ORIGINAL_DIR = RESOURCES_DIR / "original"
-
-# Carpetas usadas por la interfaz y el juego
 UI_DIR = RESOURCES_DIR / "ui"
 SOUNDS_DIR = RESOURCES_DIR / "sounds"
+ORIGINAL_DIR = RESOURCES_DIR / "original"
+
+# Carpetas usadas por el juego
 CHARACTERS_DIR = IMAGES_DIR / "characters"
 LEVELS_DIR = IMAGES_DIR / "levels"
 TEXTURES_DIR = IMAGES_DIR / "textures"
