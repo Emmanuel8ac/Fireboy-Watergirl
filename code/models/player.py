@@ -4,7 +4,6 @@ from PySide6.QtGui import QColor
 
 # Datos y movimiento de un personaje
 class Player:
-    # Inicializa los datos necesarios
     def __init__(
         self,
         name: str,
@@ -37,12 +36,10 @@ class Player:
         self.anim = anim
         self.cooldown = cooldown
 
-    # Devuelve el área de colisión del elemento
     @property
     def rect(self):
         return QRectF(self.x, self.y, self.w, self.h)
 
-    # Regresa al personaje al inicio
     def respawn(self):
         self.x = self.sx
         self.y = self.sy
@@ -51,26 +48,20 @@ class Player:
         self.cooldown = 45
 
 
-# Diamantes que suman puntos
 class Diamond:
-    # Inicializa los datos necesarios
     def __init__(self, rect: QRectF, owner: str, collected: bool = False):
         self.rect = rect
         self.owner = owner
         self.collected = collected
 
 
-# Líquidos peligrosos del mapa
 class Hazard:
-    # Inicializa los datos necesarios
     def __init__(self, rect: QRectF, kind: str):
         self.rect = rect
         self.kind = kind
 
 
-# Placas que activan mecanismos.
 class Switch:
-    # Inicializa los datos necesarios.
     def __init__(self, rect: QRectF, target: str, color: str, active: bool = False):
         self.rect = rect
         self.target = target
@@ -78,9 +69,7 @@ class Switch:
         self.active = active
 
 
-# Palancas que activan mecanismos
 class Lever:
-    # Inicializa los datos necesarios
     def __init__(self, rect: QRectF, target: str, color: str, active: bool = False):
         self.rect = rect
         self.target = target
@@ -88,9 +77,7 @@ class Lever:
         self.active = active
 
 
-# Barreras y plataformas móviles
 class MovingSolid:
-    # Inicializa los datos necesarios
     def __init__(
         self,
         rect: QRectF,
@@ -110,27 +97,21 @@ class MovingSolid:
         self.vanish = vanish
 
 
-# Portales conectados por pareja
 class Portal:
-    # Inicializa los datos necesarios
     def __init__(self, rect: QRectF, pair: int, color: str):
         self.rect = rect
         self.pair = pair
         self.color = color
 
 
-# Cajas que pueden empujarse
 class Box:
-    # Inicializa los datos necesarios
     def __init__(self, rect: QRectF, vx: float = 0.0, vy: float = 0.0):
         self.rect = rect
         self.vx = vx
         self.vy = vy
 
 
-# Partículas visuales de los personajes
 class Particle:
-    # Inicializa los datos necesarios
     def __init__(
         self,
         x: float,
@@ -150,9 +131,7 @@ class Particle:
         self.size = size
 
 
-# Elementos que forman un nivel
 class Level:
-    # Inicializa los datos necesarios
     def __init__(
         self,
         n: int,

@@ -1,19 +1,24 @@
-from PySide6.QtWidgets import QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QListWidget, QListWidgetItem
+# Importa y organiza las herramientas necesarias
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QListWidget, QListWidgetItem, QPushButton, QVBoxLayout, QWidget
+
 from logic.score_manager import ScoreManager
 
 
+# Muestra el historial individual
 class ScoresScreen(QWidget):
+    # Inicializa los datos necesarios
     def __init__(self, score_mgr: ScoreManager):
         super().__init__()
         self._score_mgr = score_mgr
         self._build_ui()
 
+    # Construye los elementos visuales
     def _build_ui(self):
         layout = QVBoxLayout(self)
         layout.setSpacing(15)
-        self.lbl_title = QLabel("PUNTUACIONES")
+        self.lbl_title = QLabel("HISTORIAL DE PUNTAJES")
         self.lbl_title.setAlignment(Qt.AlignCenter)
         self.lbl_title.setFont(QFont("Arial", 22, QFont.Bold))
 
@@ -33,26 +38,32 @@ class ScoresScreen(QWidget):
         row.addStretch()
 
         layout.addWidget(self.lbl_title)
-        layout.addWidget(QLabel("    #   Jugadores                    Puntos   Tiempo"))
+        layout.addWidget(QLabel("    #   Jugador              Personaje      Puntos   Tiempo"))
         layout.addWidget(self.list_scores)
         layout.addLayout(row)
         self.refresh()
         self._apply_styles()
 
+    # Actualiza la lista de puntajes
     def refresh(self):
         self.list_scores.clear()
         scores = self._score_mgr.get_scores()
         if not scores:
-            self.list_scores.addItem("  Sin partidas registradas todavía")
+            self.list_scores.addItem("  Todavía no hay partidas guardadas")
             return
-        for i, entry in enumerate(scores, start=1):
-            text = f"  {i:>2}. {entry.get('players','-'):<28} {entry.get('score',0):>5} pts   {entry.get('duration',0):>3}s"
+
+        for index, entry in enumerate(scores, start=1):
+            name = entry.get("player_name") or entry.get("players", "-")
+            character = entry.get("character", "Partida anterior")
+            text = f"  {index:>2}. {name:<20} {character:<14} {entry.get('score', 0):>5} pts   {entry.get('duration', 0):>3}s"
             self.list_scores.addItem(QListWidgetItem(text))
 
+    # Borra el historial
     def _clear(self):
         self._score_mgr.clear()
         self.refresh()
 
+    # Aplica colores y estilos
     def _apply_styles(self):
         self.setStyleSheet("""
             QWidget { background-color: #2b1b12; color: #f6dfb4; }

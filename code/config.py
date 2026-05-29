@@ -1,4 +1,5 @@
 """Configuración global del proyecto."""
+
 from pathlib import Path
 
 # Rutas principales del proyecto
@@ -10,8 +11,8 @@ STYLES_DIR = RESOURCES_DIR / "styles"
 ORIGINAL_DIR = RESOURCES_DIR / "original"
 
 # Carpetas usadas por la interfaz y el juego
-SOUNDS_DIR = AUDIO_DIR
-UI_DIR = IMAGES_DIR / "ui"
+UI_DIR = RESOURCES_DIR / "ui"
+SOUNDS_DIR = RESOURCES_DIR / "sounds"
 CHARACTERS_DIR = IMAGES_DIR / "characters"
 LEVELS_DIR = IMAGES_DIR / "levels"
 TEXTURES_DIR = IMAGES_DIR / "textures"
@@ -26,7 +27,6 @@ WINDOW_HEIGHT = 850
 # Reglas de partida y conexión
 GAME_DURATION_SECONDS = 180
 MAX_SCORES_SAVED = 20
-
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 5050
 
