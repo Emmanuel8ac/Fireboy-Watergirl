@@ -43,7 +43,7 @@ class HomeScreen(QWidget):
         self.btn_exit = self._make_button("SALIR", "btn_backtomenu", QSize(180, 55))
 
         layout.addWidget(self.lbl_title)
-        layout.addSpacerItem(QSpacerItem(1, 25, QSizePolicy.Minimum, QSizePolicy.Fixed))
+        layout.addSpacerItem(QSpacerItem(1, 300, QSizePolicy.Minimum, QSizePolicy.Fixed))
         layout.addWidget(self.btn_play, alignment=Qt.AlignCenter)
         layout.addWidget(self.btn_scores, alignment=Qt.AlignCenter)
         layout.addWidget(self.btn_exit, alignment=Qt.AlignCenter)
