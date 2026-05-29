@@ -102,17 +102,8 @@ python main.py
 
 ---
 
-## Estado del proyecto
 
-✔ Interfaz gráfica funcional
 
-✔ Navegación entre pantallas
-
-⏳ Pendiente:
-
-* Lógica completa del juego
-* Conexión real entre jugadores
-* Sistema de puntuaciones persistente
 
 
 
