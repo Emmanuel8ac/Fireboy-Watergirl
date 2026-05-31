@@ -44,6 +44,9 @@ class NetworkManager(QObject):
         self._remote_name = ""
         self._connected = False
         self._last_error = ""
+        self._accept_thread = None
+        self._broadcast_thread = None
+        self._receive_thread = None
 
     # Datos disponibles para la interfaz
     @property
@@ -171,7 +174,12 @@ class NetworkManager(QObject):
             self._state = "client"
             self._running = True
             self._connected = True
-            threading.Thread(target=self._receive_loop, args=(self._sock,), daemon=True).start()
+            self._receive_thread = threading.Thread(
+                target=self._receive_loop,
+                args=(self._sock,),
+                daemon=True
+            )
+            self._receive_thread.start()
             self.send_player_name()
             self.status_changed.emit(f"Conectado a la sala {code}.")
             return True
