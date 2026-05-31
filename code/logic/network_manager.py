@@ -127,8 +127,19 @@ class NetworkManager(QObject):
             self.disconnect()
             return ""
 
-        threading.Thread(target=self._accept_loop, daemon=True).start()
-        threading.Thread(target=self._broadcast_loop, daemon=True).start()
+        self._accept_thread = threading.Thread(
+            target=self._accept_loop,
+            daemon=True
+        )
+
+        self._broadcast_thread = threading.Thread(
+            target=self._broadcast_loop,
+            daemon=True
+        )
+
+        self._accept_thread.start()
+        self._broadcast_thread.start()
+
         self.status_changed.emit(f"Servidor creado: {self._code}. Comparte el código con el otro jugador.")
         return self._code
 
