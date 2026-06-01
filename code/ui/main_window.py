@@ -262,3 +262,10 @@ class MainWindow(QMainWindow):
     def _show_scores(self):
         self.scores.refresh()
         self.stack.setCurrentWidget(self.scores)
+
+    def closeEvent(self, event):
+        self.game.stop_level()
+        self.game_mgr.abort()
+        self.network.disconnect(clear_name=True)
+        self.audio.stop_music()
+        event.accept()
