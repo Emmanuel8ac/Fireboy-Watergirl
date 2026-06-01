@@ -105,25 +105,30 @@ class MainWindow(QMainWindow):
     def _on_create(self):
         if not self._name_is_valid():
             return
+
         code = self.network.create_room()
+
         if not code:
             self.connection.show_error(self.network.last_error or "No pude crear la sala.")
             return
-        self.connection.set_code(code)
+
+        self.connection.set_code(self.network._host)
         self.connection.show_info(
-            f"Sala de {self.network.local_name}: {code}. Esperando al segundo jugador."
+            f"Sala de {self.network.local_name}. Comparte esta IP: {self.network._host}"
         )
 
-    # Se conecta a una sala mediante el código
     def _on_join(self):
         if not self._name_is_valid():
             return
-        code = self.connection.input_code.text()
-        if self.network.join_room(code):
+
+        host_ip = self.connection.input_code.text().strip()
+
+        if self.network.join_room_by_ip(host_ip):
             self._open_online_characters()
             return
+
         self.connection.show_error(
-            self.network.last_error or "Código inválido: usa 6 letras o números."
+            self.network.last_error or "No pude conectarme a esa IP."
         )
 
     # Muestra personajes cuando llega el invitado
